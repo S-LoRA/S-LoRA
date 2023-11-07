@@ -1,6 +1,5 @@
-import json
 import re
-import os
+from slora.utils.model_load import hf_load_config
 
 
 class LoRAConfig:
@@ -8,11 +7,10 @@ class LoRAConfig:
     
     def __init__(self, name: str, config=None, weight_dir=None):
         self.name = name
-
+        
         if weight_dir is not None:
-            with open(os.path.join(weight_dir, "adapter_config.json"), "r") as f:
-                assert config is None or config == json.load(f)
-                config = json.load(f)
+            weight_dir = re.sub(r'-(\d+)$', '', weight_dir)
+            config, _ = hf_load_config(weight_dir)
 
         if config is not None:
             self.config = config

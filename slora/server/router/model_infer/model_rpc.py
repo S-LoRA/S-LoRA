@@ -28,8 +28,6 @@ from slora.utils.infer_utils import calculate_time, mark_start, mark_end
 from slora.utils.model_utils import get_model_config
 from .post_process import sample
 
-from slora.mprophet.model_config import get_config_json
-
 
 class ModelRpcServer(rpyc.Service):
 

@@ -8,6 +8,7 @@ from slora.common.basemodel.infer_struct import InferStateInfo
 from slora.common.mem_allocator import MemoryAllocator
 from slora.common.infer_utils import init_bloc
 from slora.common.build_utils import repair_config
+from slora.utils.model_load import hf_load_config
 
 from slora.mprophet.model_config import get_config_json
 
@@ -50,8 +51,7 @@ class TpPartBaseModel:
         if self.dummy:
             self.config = get_config_json(self.weight_dir_)
         else:
-            with open(os.path.join(self.weight_dir_, "config.json"), 'r') as json_file:
-                self.config = json.load(json_file)
+            self.config, self.weight_dir_ = hf_load_config(self.weight_dir_, mode="model")
         # rename keys
         repair_config(self.config, same_names=["num_attention_heads", "n_head"])
         repair_config(self.config, same_names=["hidden_size", "n_embd", "n_embed"])
