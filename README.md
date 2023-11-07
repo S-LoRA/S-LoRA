@@ -30,7 +30,7 @@ fine-tuning services.
 
 ## Requirements
 * CUDA 11.8
-* PyTorch <= 2.0.1
+* 1.13 <= PyTorch <= 2.0.1
 
 ## Installation
 ```
@@ -39,7 +39,7 @@ conda activate slora
 pip install torch==2.0.1
 pip install -e .
 ```
-Check that we have triton==2.1.0
+Make sure triton==2.1.0
 
 ## Example Run
 Real model weights
