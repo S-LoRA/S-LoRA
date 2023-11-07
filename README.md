@@ -125,8 +125,9 @@ Please see our paper about the trace for synthetic workloads.
 </p>
 
 ## Acknowledgment
-We learned a lot from the following projects when developing S-LoRA.
-- [LightLLM](https://github.com/ModelTC/lightllm.git)
+SLoRA is build on top of [LightLLM](https://github.com/ModelTC/lightllm.git).
+
+We also learned a lot from the following projects when developing S-LoRA.
 - [punica](https://github.com/punica-ai/punica.git)
 - [PEFT](https://github.com/huggingface/peft.git)
 - [vLLM](https://github.com/vllm-project/vllm)
