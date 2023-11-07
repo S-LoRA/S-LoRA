@@ -63,6 +63,8 @@ setup(
         "transformers",
         "triton==2.1.0",
         "uvloop",
+        "uvicorn",
+        "psutil",
     ],
     ext_modules=ext_modules,
     cmdclass={"build_ext": torch_cpp_ext.BuildExtension},

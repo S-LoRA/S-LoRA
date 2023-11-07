@@ -1,5 +1,3 @@
-import filelock
-import json
 import re
 import torch
 import os
@@ -8,30 +6,15 @@ from slora.mprophet.lora_config import get_lora_config_json
 
 from slora.models.peft.layer_weights.hf_load_utils import load_hf_weights
 from slora.models.peft.layer_weights.lora_layer_weight import LoraLayerWeight
-from huggingface_hub import snapshot_download
-
-
-def get_lock(model_name_or_path: str, cache_dir: str = None):
-    lock_dir = cache_dir if cache_dir is not None else "/tmp"
-    lock_file_name = model_name_or_path.replace("/", "-") + ".lock"
-    lock = filelock.FileLock(os.path.join(lock_dir, lock_file_name))
-    return lock
+from slora.utils.model_load import hf_load_config
 
 
 def get_lora_config(lora_dir, dummy):
     if dummy:
-        return get_lora_config_json(lora_dir)
+        return get_lora_config_json(lora_dir), lora_dir
     else:
         lora_dir = re.sub(r'-(\d+)$', '', lora_dir)
-        is_local = os.path.isdir(lora_dir)
-        if not is_local:
-            # Use file lock to prevent multiple processes from
-            # downloading the same model weights at the same time.
-            with get_lock(model_name_or_path=lora_dir):
-                lora_dir = snapshot_download(lora_dir,
-                                            allow_patterns=["*.bin", "*.json"])
-        with open(os.path.join(lora_dir, "adapter_config.json"), "r") as f:
-            return json.load(f)
+        return hf_load_config(lora_dir)
 
 
 class LoraTpPartAdapter:
@@ -44,7 +27,7 @@ class LoraTpPartAdapter:
         self.lora_dir = lora_dir
         self.network_config = network_config
 
-        self.lora_config = get_lora_config(lora_dir, dummy)
+        self.lora_config, lora_dir = get_lora_config(lora_dir, dummy)
 
         self.r = self.lora_config["r"]
         self.lora_alpha = self.lora_config["lora_alpha"]
@@ -57,15 +40,6 @@ class LoraTpPartAdapter:
         ]
 
         self.prefetch_stream = prefetch_stream
-        if not dummy:
-            lora_dir = re.sub(r'-(\d+)$', '', lora_dir)
-            is_local = os.path.isdir(lora_dir)
-            if not is_local:
-                # Use file lock to prevent multiple processes from
-                # downloading the same model weights at the same time.
-                with get_lock(model_name_or_path=lora_dir):
-                    lora_dir = snapshot_download(lora_dir,
-                                                allow_patterns=["*.bin", "*.json"])
 
         load_hf_weights("fp16", lora_dir, transformer_layer_list=self.layers,
                         swap=swap, dummy=dummy)

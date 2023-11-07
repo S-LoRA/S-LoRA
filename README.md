@@ -36,6 +36,7 @@ fine-tuning services.
 ```
 conda create -n slora python=3.9
 conda activate slora
+pip install torch==2.0.1
 pip install -e .
 ```
 Check that we have triton==2.1.0
@@ -43,16 +44,16 @@ Check that we have triton==2.1.0
 ## Example Run
 Real model weights
 ```
-cd test/test_e2e
-python launch_server.py
-python run_exp.py
+cd benchmarks
+python launch_server.py --num-adapter 100 --num-token 10000 --model-setting Real
+python run_exp.py --debug --model-setting Real
 ```
 
 
 Dummy weights
 ```
 cd benchmarks
-python launch_server.py --num-adapter 100 --num-token 10000 
+python launch_server.py --num-adapter 100 --num-token 10000 --dummy
 python run_exp.py --debug
 ```
 

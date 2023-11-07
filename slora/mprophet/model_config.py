@@ -1,5 +1,4 @@
-import json
-import os
+from slora.utils.model_load import hf_load_config
 
 
 class ModelConfig:
@@ -9,9 +8,7 @@ class ModelConfig:
         self.name = name
 
         if model_dir is not None:
-            with open(os.path.join(model_dir, "config.json"), "r") as f:
-                assert config is None or config == json.load(f)
-                config = json.load(f)
+            config, _ = hf_load_config(model_dir, mode="model")
 
         if config is not None:
             self._init_from_dict(config)

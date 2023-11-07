@@ -16,6 +16,7 @@ if __name__ == "__main__":
     parser.add_argument("--num-adapter", type=int)
     parser.add_argument("--num-token", type=int)
 
+    parser.add_argument("--dummy", action="store_true")
     parser.add_argument("--no-lora-compute", action="store_true")
     parser.add_argument("--prefetch", action="store_true")
     parser.add_argument("--no-mem-pool", action="store_true")
@@ -51,7 +52,8 @@ if __name__ == "__main__":
             for adapter_dir in adapter_dirs:
                 cmd += f" --lora {adapter_dir}-{i}"
 
-        cmd += " --dummy"
+        if args.dummy:
+            cmd += " --dummy"
         cmd += " --swap"
         # cmd += " --scheduler pets"
         # cmd += " --profile"

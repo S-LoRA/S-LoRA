@@ -48,7 +48,7 @@ class RouterManager:
         # get adapter rank
         self.lora_ranks = {}
         for lora_dir in adapter_dirs:
-            config = get_lora_config(lora_dir, input_params.dummy)
+            config, _ = get_lora_config(lora_dir, input_params.dummy)
             self.lora_ranks[lora_dir] = config["r"]
         self.lora_ranks[None] = 0
         
