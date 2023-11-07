@@ -90,7 +90,7 @@ class LlamaTpPartModel(TpPartBaseModel):
 
         # NTK
         try:
-            ntk_alpha = float(os.environ.get("LIGHTLLM_NTK_ALPHA", 1))
+            ntk_alpha = float(os.environ.get("SLORA_NTK_ALPHA", 1))
             assert ntk_alpha >= 1
             if ntk_alpha > 1:
                 print(f"Note: NTK enabled, alpha set to {ntk_alpha}")

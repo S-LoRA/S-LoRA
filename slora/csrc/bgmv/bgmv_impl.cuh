@@ -1,3 +1,4 @@
+// adapted from https://github.com/punica-ai/punica/blob/master/punica/ops/csrc/bgmv/bgmv_impl.cuh
 #pragma once
 
 #include <cooperative_groups.h>

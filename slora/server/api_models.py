@@ -21,7 +21,7 @@ class ChatCompletionRequest(BaseModel):
     logit_bias: Optional[Dict[str, float]] = None
     user: Optional[str] = None
 
-    # Additional parameters supported by LightLLM
+    # Additional parameters supported by S-LoRA
     do_sample: Optional[bool] = False
     top_k: Optional[int] = -1
     ignore_eos: Optional[bool] = False
