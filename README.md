@@ -49,12 +49,18 @@ python launch_server.py --num-adapter 100 --num-token 10000 --model-setting Real
 python run_exp.py --debug --model-setting Real
 ```
 
-
 Dummy weights
 ```
 cd benchmarks
 python launch_server.py --num-adapter 100 --num-token 10000 --dummy
 python run_exp.py --debug
+```
+
+Test
+```
+cd test/test_e2e
+python launch_server.py
+python run_exp.py
 ```
 
 ## Methods
