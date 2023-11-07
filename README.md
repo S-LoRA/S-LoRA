@@ -117,6 +117,15 @@ Please see our paper about the trace for synthetic workloads.
 <img src="figures/tp.png" alt="tp" width="600"/>
 </p>
 
+## Acknowledgment
+We learned a lot from the following projects when developing S-LoRA.
+- [lightllm](https://github.com/ModelTC/lightllm.git)
+- [punica](https://github.com/punica-ai/punica.git)
+- [vLLM](https://github.com/vllm-project/vllm)
+
+## Roadmap
+- [ ] Release tensor parallelism implementation
+
 ## Citation
 ```bibtex
 @misc{sheng2023slora,
@@ -128,6 +137,3 @@ Please see our paper about the trace for synthetic workloads.
       primaryClass={cs.LG}
 }
 ```
-
-## Roadmap
-- [ ] Release tensor parallelism implementation
