@@ -135,7 +135,8 @@ We also learned a lot from the following projects when developing S-LoRA.
 ## Roadmap
 - [ ] Release tensor parallelism implementation
 - [ ] Clean up reproducible scripts
-- [ ] More user-friendly API/frontend 
+- [ ] More user-friendly API/frontend
+- [ ] More model support
 
 ## Citation
 ```bibtex
