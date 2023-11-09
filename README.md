@@ -1,7 +1,7 @@
 # S-LoRA: Serving Thousands of Concurrent LoRA Adapters [[paper](https://arxiv.org/abs/2311.03285)]
 
 <p align="center">
-<img src="figures/overview.png" alt="overview" width="500"/>
+<img src="figures/serving_perf.png" alt="perf" width="700"/>
 </p>
 
 ## Abstract
@@ -27,6 +27,10 @@ times and increase the number of served adapters by several orders of
 magnitude. As a result, S-LoRA enables scalable serving of many task-specific
 fine-tuned models and offers the potential for large-scale customized
 fine-tuning services.
+
+<p align="center">
+<img src="figures/overview.png" alt="overview" width="500"/>
+</p>
 
 ## Requirements
 * CUDA 11.8
