@@ -33,35 +33,42 @@ fine-tuning services.
 </p>
 
 ## Requirements
-* CUDA 11.8
+* CUDA 11.8 compatible GPU
+  * Recommended: GPUs from the Ampere family, like the A100, which support bfloat16 operations.
+  * Note: Older GPUs from the Turing family like the T4, which do not support bfloat16, are not supported.
 * 1.13 <= PyTorch <= 2.0.1
 
 ## Installation
-```
+```bash
 conda create -n slora python=3.9
-conda activate slora
+conda activate slora 
+# Optional: Install CUDA via conda for a smoother installation experience,
+# but you may need to manually set the Anaconda path variables.
+# conda install cuda -c nvidia/label/cuda-11.8.0
 pip install torch==2.0.1
 pip install -e .
 ```
 Make sure triton==2.1.0
 
+For more details on installing CUDA via conda, refer to the [CUDA Installation Guide by NVIDIA](https://docs.nvidia.com/cuda/cuda-installation-guide-linux/index.html#conda-installation).
+
 ## Example Run
 Real model weights
-```
+```bash
 cd benchmarks
 python launch_server.py --num-adapter 100 --num-token 10000 --model-setting Real
 python run_exp.py --debug --model-setting Real
 ```
 
 Dummy weights
-```
+```bash
 cd benchmarks
 python launch_server.py --num-adapter 100 --num-token 10000 --dummy
 python run_exp.py --debug
 ```
 
 Test
-```
+```bash
 cd test/test_e2e
 python launch_server.py
 python run_exp.py
