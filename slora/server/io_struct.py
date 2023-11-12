@@ -40,8 +40,8 @@ class Req:
 
     def __repr__(self):
         return (f"request_id(n={self.request_id}, "
-                f"adapter_dir={self.adapter_dir}, "
-                f"prompt_ids={self.prompt_ids}, ")
+                f"adapter_dir={self.adapter_dir}, ")
+                # f"prompt_ids={self.prompt_ids}, ")
         
 
 class ReqDetokenizationState:

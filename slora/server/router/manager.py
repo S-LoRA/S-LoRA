@@ -21,10 +21,11 @@ from .stats import Stats
 from slora.server.input_params import InputParams
 from slora.models.peft.lora_adapter import get_lora_config
 from slora.server.router.profiler import AlphaModel, BetaModel
+from slora.server.router.abort_req_queue import AbortReqQueue
+from slora.server.router.cluster_req_queue import ClusterReqQueue
+from slora.server.router.fair_req_queue import FairReqQueue
 from slora.server.router.pets_req_queue import PETSReqQueue
 from slora.server.router.peft_req_queue import PEFTReqQueue
-from slora.server.router.cluster_req_queue import ClusterReqQueue
-from slora.server.router.abort_req_queue import AbortReqQueue
 
 
 class RouterManager:
@@ -51,22 +52,25 @@ class RouterManager:
             config, _ = get_lora_config(lora_dir, input_params.dummy)
             self.lora_ranks[lora_dir] = config["r"]
         self.lora_ranks[None] = 0
-        
-        if input_params.scheduler == "pets":
+
+        if input_params.scheduler == "fair":
+            self.req_queue = FairReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                                          input_params.running_max_req_size)
+        elif input_params.scheduler == "pets":
             self.req_queue = PETSReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                      input_params.running_max_req_size)
+                                          input_params.running_max_req_size)
         elif input_params.scheduler == "peft":
             self.req_queue = PEFTReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                      input_params.running_max_req_size)
+                                          input_params.running_max_req_size)
         elif input_params.batch_num_adapters is not None:
             self.req_queue = ClusterReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                    input_params.running_max_req_size, input_params.batch_num_adapters)
+                                             input_params.running_max_req_size, input_params.batch_num_adapters)
         elif input_params.enable_abort:
             self.req_queue = AbortReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                      input_params.running_max_req_size)
+                                           input_params.running_max_req_size)
         else:
             self.req_queue = ReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                    input_params.running_max_req_size)
+                                      input_params.running_max_req_size)
 
         self.running_batch: Batch = None
         self.eos_id = eos_id
@@ -261,6 +265,7 @@ class RouterManager:
         return
 
     async def _decode_batch(self, batch:Batch):
+        self.req_queue.update_counter(batch)
         rets = [self.model_rpcs[tp_rank].decode_batch(batch.batch_id) for tp_rank in range(self.world_size)]
         ans = await asyncio.gather(*rets)
         if self.world_size != 1:

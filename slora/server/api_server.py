@@ -92,7 +92,10 @@ async def generate(request: Request) -> Response:
     sampling_params = SamplingParams(**sample_params_dict)
     sampling_params.verify()
 
-    request_id = uuid.uuid4().hex
+    if "req_id" in request_dict:
+        request_id = request_dict["req_id"]
+    else:
+        request_id = uuid.uuid4().hex
     results_generator = httpserver_manager.generate(adapter_dir, prompt, sampling_params, request_id)
 
     # Non-streaming case
@@ -138,7 +141,10 @@ async def generate_stream(request: Request) -> Response:
     sampling_params = SamplingParams(**sample_params_dict)
     sampling_params.verify()
 
-    request_id = uuid.uuid4().hex
+    if "req_id" in request_dict:
+        request_id = request_dict["req_id"]
+    else:
+        request_id = uuid.uuid4().hex
     results_generator = httpserver_manager.generate(adapter_dir, prompt, sampling_params, request_id)
 
     # Streaming case
