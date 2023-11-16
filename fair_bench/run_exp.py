@@ -212,8 +212,8 @@ def run_exp(model_setting, backend, server, config, output, mode, seed=42, debug
             adapter_dirs = [(base_model, None)]
             num_adapters = 1
         requests = generate_requests(num_adapters, alpha, req_rate, cv, duration,
-                                 input_range, output_range, adapter_dirs,
-                                 seed=seed)
+                                     input_range, output_range, adapter_dirs,
+                                     seed=seed)
         avg_prompt_len = np.mean([req.prompt_len for req in requests])
         avg_output_len = np.mean([req.output_len for req in requests])
         avg_len = np.mean([req.prompt_len + req.output_len for req in requests])

@@ -27,10 +27,20 @@ BenchmarkConfig = namedtuple(
 debug_suite = {
     "default": BenchmarkConfig(
         num_adapters = [2],
-        alpha = [0.5],
+        alpha = [0.2],
         req_rate = [4],
         cv = [1],
-        duration = [30],
+        duration = [60 * 20],
+        input_range = [[8, 512]],
+        output_range = [[8, 512]],
+    ),
+
+    "long": BenchmarkConfig(
+        num_adapters = [2],
+        alpha = [0.2],
+        req_rate = [4],
+        cv = [1],
+        duration = [60 * 20],
         input_range = [[8, 512]],
         output_range = [[8, 512]],
     ),
