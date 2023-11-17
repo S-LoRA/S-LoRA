@@ -358,6 +358,7 @@ def main():
     ''' slora arguments '''
     parser.add_argument("--lora-dirs", type=str, default=[], action="append",
                         help="the adapter weight dirs associate with base model dir")
+    parser.add_argument("--fair-weights", type=int, default=[], action="append")
     parser.add_argument("--dummy", action="store_true")
     parser.add_argument("--swap", action="store_true")
     parser.add_argument("--pool-size-lora", type=int, default=0)

@@ -54,7 +54,10 @@ def get_response_time_over_time(responses, T, window, x_ticks, users):
                     if l <= req_time and req_time <= r:
                         y[-1][i] += response_time
                         cnt += 1
-            y[-1][i] /= cnt
+            if cnt == 0:
+                y[-1][i] = None
+            else:
+                y[-1][i] /= cnt
     return y
 
 
@@ -80,7 +83,7 @@ if __name__ == "__main__":
         T = max([response["req_time"] for response in responses])
         T = int(T) / 10 * 10
         num_x = 100
-        window = 60
+        window = 30
         x_ticks = [T / num_x * i for i in range(num_x)]
 
         users = list(set([response["adapter_dir"] for response in responses]))

@@ -55,7 +55,7 @@ class RouterManager:
 
         if input_params.scheduler == "fair":
             self.req_queue = FairReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                          input_params.running_max_req_size)
+                                          input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
         elif input_params.scheduler == "pets":
             self.req_queue = PETSReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
                                           input_params.running_max_req_size)
@@ -388,6 +388,7 @@ def start_router_process(args, router_port, detokenization_port, model_rpc_ports
                                no_kernel=args.no_kernel,
                                no_mem_pool=args.no_mem_pool,
                                bmm=args.bmm,
+                               fair_weights=args.fair_weights,
                               )
 
     try:

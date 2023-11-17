@@ -19,6 +19,9 @@ class Request:
         self.req_time = req_time
 
     
+    def __lt__(self, other):
+        return self.req_time < other.req_time
+    
     def __repr__(self):
         return f"req_id={self.req_id}, " \
                f"model_dir={self.model_dir}, adapter_dir={self.adapter_dir}, " \
@@ -30,10 +33,90 @@ def dummy_prompt(prompt_len):
     return "Hello " * prompt_len
 
 
+def generate_requests_on_off(num_adapters, alpha, req_rate, cv, duration,
+                             input_range, output_range, on_off,
+                             adapter_dirs, # (base_dir, adapter_dir)
+                             seed=42):
+    assert num_adapters == 2
+    np.random.seed(seed)
+
+    tot_req = int(req_rate * duration)
+
+    # generate adapter id
+    probs = np.random.power(alpha, tot_req)
+    ind = (probs * num_adapters).astype(int)
+
+    # generate input output len
+    input_lens = np.random.randint(input_range[0], input_range[1], tot_req)
+    output_lens = np.random.randint(output_range[0], output_range[1], tot_req)
+
+    # generate timestamp
+    requests = []
+    tic = 0
+    shape = 1 / (cv * cv)
+    scale = cv * cv / req_rate
+    # intervals = np.random.exponential(1.0 / req_rate, tot_req)
+    intervals = np.random.gamma(shape, scale, tot_req)
+    for i in range(tot_req):
+        tic += intervals[i]
+        if ind[i] == 1 and int(tic // on_off) & 1 == 1:
+            continue
+        requests.append(Request(i, adapter_dirs[ind[i]][0], adapter_dirs[ind[i]][1],
+                                dummy_prompt(input_lens[i]), int(input_lens[i]), int(output_lens[i]),
+                                tic))
+    return requests
+
+
+def generate_requests_increase(num_adapters, alpha, req_rate, cv, duration,
+                               input_range, output_range, mode,
+                               adapter_dirs, # (base_dir, adapter_dir))
+                               seed=42):
+    assert num_adapters == 2
+    np.random.seed(seed)
+
+    rates = [req_rate * (1 - alpha), req_rate * alpha]
+    start_rate = 0.5
+    end_rate = rates[0]
+    tot_req = [int(0.5 * (start_rate + end_rate) * duration), int(rates[1] * duration)]
+
+    requests = []
+    # generate for adapter 0
+    input_lens = np.random.randint(input_range[0], input_range[1], tot_req[0])
+    output_lens = np.random.randint(output_range[0], output_range[1], tot_req[0])
+    tic = 0
+    for i in range(tot_req[0]):
+        current_rate = start_rate + (end_rate - start_rate) * tic / duration
+        tic += 1 / current_rate
+        requests.append(Request(i, adapter_dirs[0][0], adapter_dirs[0][1],
+                                dummy_prompt(input_lens[i]), int(input_lens[i]), int(output_lens[i]),
+                                tic))
+
+    # generate for adapter 1
+    input_lens = np.random.randint(input_range[0], input_range[1], tot_req[1])
+    output_lens = np.random.randint(output_range[0], output_range[1], tot_req[1])
+    tic = 0
+    for i in range(tot_req[1]):
+        tic += 1 / rates[1]
+        requests.append(Request(i + tot_req[0], adapter_dirs[1][0], adapter_dirs[1][1],
+                                dummy_prompt(input_lens[i]), int(input_lens[i]), int(output_lens[i]),
+                                tic))
+    requests = sorted(requests)
+    return requests
+ 
+
 def generate_requests(num_adapters, alpha, req_rate, cv, duration,
-                      input_range, output_range,
+                      input_range, output_range, on_off, mode,
                       adapter_dirs, # (base_dir, adapter_dir)
                       seed=42):
+    if on_off != -1:
+        return generate_requests_on_off(
+                num_adapters, alpha, req_rate, cv, duration,
+                input_range, output_range, on_off, adapter_dirs, seed)
+    if mode == "increase":
+        return generate_requests_increase(
+                num_adapters, alpha, req_rate, cv, duration,
+                input_range, output_range, mode, adapter_dirs, seed)
+
     np.random.seed(seed)
 
     tot_req = int(req_rate * duration)

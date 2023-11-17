@@ -13,12 +13,23 @@ from slora.server.router.req_queue import ReqQueue
 class FairReqQueue(ReqQueue):
 
     def __init__(self, max_total_tokens, batch_max_tokens, running_max_req_size,
+                 adapter_dirs, fair_weights,
                  input_price=1, output_price=2) -> None:
         super().__init__(max_total_tokens, batch_max_tokens, running_max_req_size)
         self.input_price = input_price
         self.output_price = output_price
         self.served = {}
         self.user_req_list = {}
+
+        self.adapter_dirs = adapter_dirs
+        self.fair_weights = fair_weights
+
+        self.fairw = {}
+        for i in range(len(adapter_dirs)):
+            if i < len(fair_weights):
+                self.fairw[adapter_dirs[i]] = fair_weights[i]
+            else:
+                self.fairw[adapter_dirs[i]] = 1
         
         
     def append(self, req):
@@ -111,8 +122,8 @@ class FairReqQueue(ReqQueue):
                     new_batch_total_tokens += req.input_len
                     self.user_req_list[adapter_dir].popleft()
                     # update fairness counter
-                    self.served[adapter_dir] += req.input_len * self.input_price
-                    active_served[adapter_dir] += req.input_len * self.input_price
+                    self.served[adapter_dir] += req.input_len * self.input_price / self.fairw[adapter_dir]
+                    active_served[adapter_dir] += req.input_len * self.input_price / self.fairw[adapter_dir]
                 else:
                     break
             else:
@@ -129,7 +140,7 @@ class FairReqQueue(ReqQueue):
     
     def update_counter(self, current_batch: Batch):
         for req in current_batch.reqs:
-            self.served[req.adapter_dir] += 1 * self.output_price
+            self.served[req.adapter_dir] += 1 * self.output_price / self.fairw[req.adapter_dir]
 
 
     def next_batch(self):

@@ -198,28 +198,25 @@ def get_res_stats(responses, benchmark_time, backend):
     return res
 
 
-def run_exp(model_setting, backend, server, config, output, mode, seed=42, debug=False):
+def run_exp(model_setting, backend, server, config, output, seed=42, debug=False):
     print([(k, v) for k, v in zip(BenchmarkConfig._fields, config)])
 
-    num_adapters, alpha, req_rate, cv, duration, input_range, output_range = config
+    num_adapters, alpha, req_rate, cv, duration, input_range, output_range, on_off, mode = config
     # assert duration >= 30
-    if mode == "synthetic":
-        base_model = BASE_MODEL[model_setting]
-        adapter_dirs = LORA_DIR[model_setting]
-        adapter_dirs = get_adapter_dirs(num_adapters, adapter_dirs)
-        adapter_dirs = [(base_model, adapter_dirs[i]) for i in range(num_adapters)]
-        if num_adapters == 0:
-            adapter_dirs = [(base_model, None)]
-            num_adapters = 1
-        requests = generate_requests(num_adapters, alpha, req_rate, cv, duration,
-                                     input_range, output_range, adapter_dirs,
-                                     seed=seed)
-        avg_prompt_len = np.mean([req.prompt_len for req in requests])
-        avg_output_len = np.mean([req.output_len for req in requests])
-        avg_len = np.mean([req.prompt_len + req.output_len for req in requests])
-        print("avg_len:", avg_len, "avg_prompt_len:", avg_prompt_len, "avg_output_len:", avg_output_len)
-    else:
-        raise NotImplementedError()
+    base_model = BASE_MODEL[model_setting]
+    adapter_dirs = LORA_DIR[model_setting]
+    adapter_dirs = get_adapter_dirs(num_adapters, adapter_dirs)
+    adapter_dirs = [(base_model, adapter_dirs[i]) for i in range(num_adapters)]
+    if num_adapters == 0:
+        adapter_dirs = [(base_model, None)]
+        num_adapters = 1
+    requests = generate_requests(num_adapters, alpha, req_rate, cv, duration,
+                                 input_range, output_range, on_off, mode, adapter_dirs,
+                                 seed=seed)
+    avg_prompt_len = np.mean([req.prompt_len for req in requests])
+    avg_output_len = np.mean([req.output_len for req in requests])
+    avg_len = np.mean([req.prompt_len + req.output_len for req in requests])
+    print("avg_len:", avg_len, "avg_prompt_len:", avg_prompt_len, "avg_output_len:", avg_output_len)
        
     if debug:
         print("num requests:", len(requests))
@@ -248,8 +245,6 @@ if __name__ == "__main__":
 
     parser.add_argument("--append", action="store_true")
 
-    parser.add_argument("--mode", default="synthetic", choices=["synthetic", "real"])
-
     parser.add_argument("--server", type=str, default="http://localhost:8000")
     parser.add_argument("--seed", type=int, default=42)
     parser.add_argument("--output", type=str, default=None)
@@ -257,11 +252,11 @@ if __name__ == "__main__":
 
     # set output file name
     if args.output is None:
-        args.output = f"all_results_{args.mode}_" + args.backend + ".jsonl"
+        args.output = f"all_results_{args.suite}.jsonl"
     if args.debug:
         args.output = "debug_" + args.output
 
-    suites = get_all_suites(mode=args.mode, debug=args.debug, suite=args.suite)
+    suites = get_all_suites(debug=args.debug, suite=args.suite)
 
     if not args.append:
         os.system(f"rm {args.output}")
@@ -274,4 +269,4 @@ if __name__ == "__main__":
     for config in tqdm(suites, desc="suites"):
         if to_dict(config) not in results:
             stats = run_exp(args.model_setting, args.backend, args.server, config,
-                            args.output, args.mode, args.seed, args.debug)
+                            args.output, args.seed, args.debug)

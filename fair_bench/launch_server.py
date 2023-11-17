@@ -23,7 +23,8 @@ if __name__ == "__main__":
     parser.add_argument("--bmm", action="store_true")
     parser.add_argument("--batch-num-adapters", type=int, default=None)
     parser.add_argument("--enable-abort", action="store_true")
-    parser.add_argument("--vllm-mem-ratio", type=float, default=0.95)
+
+    parser.add_argument("--fair-weights", type=int, default=[], action="append")
     args = parser.parse_args()
 
     base_model = BASE_MODEL[args.model_setting]
@@ -38,6 +39,8 @@ if __name__ == "__main__":
         for i in range(num_iter):
             for adapter_dir in adapter_dirs:
                 cmd += f" --lora {adapter_dir}-{i}"
+        for x in args.fair_weights:
+            cmd += f" --fair-weights {x}"
 
         if args.dummy:
             cmd += " --dummy"
@@ -57,37 +60,6 @@ if __name__ == "__main__":
         # cmd += " --no-kernel"
         if args.bmm:
             cmd += " --bmm"
-
-    elif args.backend == "lightllm":
-        cmd = f"python -m lightllm.server.api_server" \
-              f" --model_dir {base_model} --tp 1 --max_total_token_num {args.num_token}" \
-              f" --tokenizer_mode auto" \
-              f" --host 127.0.0.1 --port 8000"
-
-    elif args.backend == "vllm":
-        cmd = f"python -m vllm.entrypoints.api_server" \
-              f" --model {base_model} --swap-space 16" \
-              f" --disable-log-requests" \
-              f" --host 127.0.0.1 --port 8000"
-
-    elif args.backend == "vllm-packed":
-        gpu_memory = args.vllm_mem_ratio / (args.num_adapter)
-
-        for i in range(args.num_adapter):
-            pid = os.fork()
-            if pid == 0:
-                cmd = f"python -m vllm.entrypoints.api_server" \
-                    f" --model {base_model} --swap-space 0" \
-                    f" --gpu-memory-utilization {gpu_memory}" \
-                    f" --disable-log-requests" \
-                    f" --host 127.0.0.1 --port {8000 + i}"
-                os.system(cmd)
-                sys.exit(0)
-
-        for _ in range(args.num_adapter):
-            os.wait()
-
-        sys.exit(0)
 
     # print(cmd)
     os.system(cmd)
