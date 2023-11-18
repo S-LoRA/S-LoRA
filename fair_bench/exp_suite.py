@@ -75,6 +75,18 @@ debug_suite = {
         mode = ["poisson"],
     ),
 
+    "on_off_equal": BenchmarkConfig(
+        num_adapters = [2],
+        alpha = [1],
+        req_rate = [3],
+        cv = [1],
+        duration = [60 * 10],
+        input_range = [[8, 512]],
+        output_range = [[8, 512]],
+        on_off = [60],
+        mode = ["poisson"],
+    ),
+
     "unbalance": BenchmarkConfig(
         num_adapters = [2],
         alpha = [0.2],

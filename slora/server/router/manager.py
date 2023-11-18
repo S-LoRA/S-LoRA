@@ -24,6 +24,7 @@ from slora.server.router.profiler import AlphaModel, BetaModel
 from slora.server.router.abort_req_queue import AbortReqQueue
 from slora.server.router.cluster_req_queue import ClusterReqQueue
 from slora.server.router.fair_req_queue import FairReqQueue
+from slora.server.router.naive_fair_req_queue import NaiveFairReqQueue
 from slora.server.router.pets_req_queue import PETSReqQueue
 from slora.server.router.peft_req_queue import PEFTReqQueue
 
@@ -56,6 +57,9 @@ class RouterManager:
         if input_params.scheduler == "fair":
             self.req_queue = FairReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
                                           input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
+        elif input_params.scheduler == "naive_fair":
+            self.req_queue = NaiveFairReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                                               input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
         elif input_params.scheduler == "pets":
             self.req_queue = PETSReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
                                           input_params.running_max_req_size)
