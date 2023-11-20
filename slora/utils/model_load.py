@@ -21,3 +21,16 @@ def hf_load_config(weights_dir, mode="adapter"):
     config_name = "adapter_config.json" if mode == "adapter" else "config.json"
     with open(os.path.join(weights_dir, config_name), "r") as f:
         return json.load(f), weights_dir
+
+def hf_load_quantize_config(weights_dir):
+    # As the weight_dir has already been updated in `hf_load_config` func in `_init_config` func, we assume that the weights_dir is local now.
+    quantize_config_filename = None
+    if os.path.isfile(os.path.join(weights_dir, "quantize_config.json")):
+        quantize_config_filename = os.path.join(weights_dir, "quantize_config.json")
+    elif os.path.isfile(os.path.join(weights_dir, "quant_config.json")):
+        quantize_config_filename = os.path.join(weights_dir, "quant_config.json")
+    else:
+        raise ValueError(f"Can not find either the `quantize_config.json` file or the `quant_config.json` file under the weights_dir `{weights_dir}`. Please check if the model you are using is a quantified model!")
+
+    with open(quantize_config_filename, "r") as f:
+        return json.load(f)

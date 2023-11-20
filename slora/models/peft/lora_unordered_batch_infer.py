@@ -161,11 +161,22 @@ class LoraUnorderedBatchInfer:
 
     @final
     def _context_forward(self, input_ids, infer_state, no_lora_compute=False):
+        # input_ids
         cuda_input_ids = input_ids
+        # pre_infer -> get the input embeddings
         input_embs = self.base_model.pre_infer.context_forward(
                 cuda_input_ids, infer_state, self.base_model.pre_post_weight)
+        """
+        for each layer, call _lora_context_forward
+        params:
+            i -> layer_id
+            input_embs -> input embeddings
+            infer_state -> infer_state_class instance which record some useful information
+            no_lora_compute -> whether or not to calculate lora part
+        """
         for i in range(self.base_model.layers_num):
             input_embs = self._lora_context_forward(i, input_embs, infer_state, no_lora_compute)
+        # post_infer -> get predictions
         predict_logics = self.base_model.post_infer.token_forward(
                 input_embs, infer_state, self.base_model.pre_post_weight, return_logics=True)
         return predict_logics
@@ -185,7 +196,9 @@ class LoraUnorderedBatchInfer:
 
     @final
     def _lora_context_forward(self, layer_id, input_embs, infer_state, no_lora_compute=False):
+        # call the `_lora_context_attention` func, all the params are directly passed into it
         self._lora_context_attention(layer_id, input_embs, infer_state, no_lora_compute)
+        # ffn part
         layer_weight = self.base_model.trans_layers_weight[layer_id]
         layer_infer = self.base_model.layers_infer[layer_id]
         layer_infer._context_ffn(input_embs, infer_state, layer_weight)
@@ -206,11 +219,12 @@ class LoraUnorderedBatchInfer:
 
     # @mark_cost_time("trans context flash forward time cost")  # dont to remove this, will make performence down, did not know why
     def _lora_context_attention(self, layer_id, input_embs, infer_state, no_lora_compute=False):
+        # get the transformer weights class & transformer inference class
         layer_weight = self.base_model.trans_layers_weight[layer_id]
         layer_infer = self.base_model.layers_infer[layer_id]
         # layer normalization
         input1 = layer_infer._att_norm(input_embs, infer_state, layer_weight)
-        # fetch k, v
+        # fetch k, v -> in prefill stage, cache_k & cache_v are pre-allocated in _prefill func
         cache_k, cache_v = layer_infer._pre_cache_kv(infer_state, layer_weight)
         # gen new q, k, v (batch different adapters)
         q = self._lora_get_qkv(layer_id, input1, cache_k, cache_v, infer_state, no_lora_compute)
