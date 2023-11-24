@@ -83,7 +83,7 @@ if __name__ == "__main__":
         T = max([response["req_time"] for response in responses])
         T = int(T) / 10 * 10
         num_x = 100
-        window = 30
+        window = 60
         x_ticks = [T / num_x * i for i in range(num_x)]
 
         users = list(set([response["adapter_dir"] for response in responses]))

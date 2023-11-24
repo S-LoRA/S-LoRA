@@ -14,7 +14,7 @@ if __name__ == "__main__":
     parser.add_argument("--model-setting", type=str, default="S1")
 
     parser.add_argument("--num-adapter", type=int, default=10)
-    parser.add_argument("--num-token", type=int, default=8000)
+    parser.add_argument("--num-token", type=int, default=10000)
 
     parser.add_argument("--scheduler", type=str, default="vtc_fair")
     parser.add_argument("--fair-weights", type=int, default=[], action="append")
@@ -31,6 +31,7 @@ if __name__ == "__main__":
         cmd += " --dummy"
         cmd += " --swap"
         cmd += f" --scheduler {args.scheduler}"
+        cmd += " --no-lora"
 
         num_iter = args.num_adapter // len(adapter_dirs) + 1
         for i in range(num_iter):

@@ -209,7 +209,8 @@ class ModelRpcServer(rpyc.Service):
         assert len(batch.adapter_dirs) == len(batch), "batch.adapter_dirs != batch"
 
         # always use lora batch infer
-        if self.input_params.no_kernel or self.input_params.scheduler == "peft" or set(batch.adapter_dirs) == {None}:
+        if (self.input_params.no_lora or self.input_params.no_kernel or
+            self.input_params.scheduler == "peft" or set(batch.adapter_dirs) == {None}):
             engine = self.model
         else:
             adapters = [self.adapters[self.adapter_id[adapter_dir]] for adapter_dir in batch.adapter_dirs]

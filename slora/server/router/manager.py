@@ -196,11 +196,12 @@ class RouterManager:
                 self.stats_tool.count_prompt_tokens(new_batch)
                 self.running_batch = new_batch
 
-                # load adapters
-                ret = []
-                for tp_rank in range(self.world_size):
-                    ret.append(self.model_rpcs[tp_rank].load_adapters(new_batch.adapter_dirs))
-                await asyncio.gather(*ret)
+                if not self.input_params.no_lora:
+                    # load adapters
+                    ret = []
+                    for tp_rank in range(self.world_size):
+                        ret.append(self.model_rpcs[tp_rank].load_adapters(new_batch.adapter_dirs))
+                    await asyncio.gather(*ret)
 
                 
                 # merge adapter to base model
@@ -220,7 +221,8 @@ class RouterManager:
         if self.has_wait_tokens < self.max_wait_tokens:
             self.stats_tool.count_output_tokens(self.running_batch)
             # prefetch
-            if (self.input_params.prefetch and (self.has_wait_tokens == self.max_wait_tokens // 2 or
+            if (not self.input_params.no_lora and
+                self.input_params.prefetch and (self.has_wait_tokens == self.max_wait_tokens // 2 or
                 self.has_wait_tokens == self.max_wait_tokens - 3) and self.input_params.scheduler != "peft"):
                 next_batch = self.req_queue.next_batch()
                 if next_batch is not None:
@@ -242,10 +244,11 @@ class RouterManager:
             if new_mini_batch is not None:
                 self.stats_tool.count_prompt_tokens(new_mini_batch)
 
-                ret = []
-                for tp_rank in range(self.world_size):
-                    ret.append(self.model_rpcs[tp_rank].load_adapters(new_mini_batch.adapter_dirs))
-                await asyncio.gather(*ret)
+                if not self.input_params.no_lora:
+                    ret = []
+                    for tp_rank in range(self.world_size):
+                        ret.append(self.model_rpcs[tp_rank].load_adapters(new_mini_batch.adapter_dirs))
+                    await asyncio.gather(*ret)
 
                 await self._prefill_batch(new_mini_batch, minibatch=True)
                 if not new_mini_batch.is_clear():
@@ -319,7 +322,7 @@ class RouterManager:
                     ret.append(self.model_rpcs[tp_rank].unmerge_adapter())
                 await asyncio.gather(*ret)
 
-            if not minibatch:
+            if not minibatch and not self.input_params.no_lora:
                 ret = []
                 for tp_rank in range(self.world_size):
                     ret.append(self.model_rpcs[tp_rank].offload_adapters(batch.adapter_dirs))
@@ -333,11 +336,12 @@ class RouterManager:
 
     async def _filter_runing_batch(self):
         if self.running_batch is not None and self.running_batch.is_clear():
-            # offload model and adapters
-            ret = []
-            for tp_rank in range(self.world_size):
-                ret.append(self.model_rpcs[tp_rank].offload_adapters())
-            await asyncio.gather(*ret)
+            if not self.input_params.no_lora:
+                # offload model and adapters
+                ret = []
+                for tp_rank in range(self.world_size):
+                    ret.append(self.model_rpcs[tp_rank].offload_adapters())
+                await asyncio.gather(*ret)
 
             self.running_batch = None
             return
@@ -402,6 +406,7 @@ def start_router_process(args, router_port, detokenization_port, model_rpc_ports
                                no_kernel=args.no_kernel,
                                no_mem_pool=args.no_mem_pool,
                                bmm=args.bmm,
+                               no_lora=args.no_lora,
                                fair_weights=args.fair_weights,
                               )
 

@@ -370,12 +370,13 @@ def main():
     parser.add_argument("--enable-abort", action="store_true")
 
     # debug parameters
-    # do not use, does not rule out the swap over MemAllocator
+    # do not use no-lora-swap, does not rule out the swap over MemAllocator
     parser.add_argument("--no-lora-swap", action="store_true")
     parser.add_argument("--no-lora-compute", action="store_true")
     parser.add_argument("--no-kernel", action="store_true")
     parser.add_argument("--no-mem-pool", action="store_true")
     parser.add_argument("--bmm", action="store_true")
+    parser.add_argument("--no-lora", action="store_true")
     ''' end of slora arguments '''
 
     args = parser.parse_args()
