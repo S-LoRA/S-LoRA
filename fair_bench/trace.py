@@ -102,6 +102,28 @@ def generate_requests_increase(num_adapters, alpha, req_rate, cv, duration,
                                 tic))
     requests = sorted(requests)
     return requests
+
+
+def generate_requests_uniform(num_adapters, alpha, req_rate, cv, duration,
+                              input_range, output_range, mode,
+                              adapter_dirs, # (base_dir, adapter_dir))
+                              seed=42):
+    assert num_adapters == len(req_rate)
+    np.random.seed(seed)
+
+    requests = []
+    for i in range(num_adapters):
+        tot_req = int(req_rate[i] * duration)
+        input_lens = np.random.randint(input_range[0], input_range[1], tot_req)
+        output_lens = np.random.randint(output_range[0], output_range[1], tot_req)
+        tic = np.random.rand() * 1 / req_rate[i]
+        for j in range(tot_req):
+            tic += 1 / req_rate[i]
+            requests.append(Request(len(requests), adapter_dirs[i][0], adapter_dirs[i][1],
+                                    dummy_prompt(input_lens[j]), int(input_lens[j]), int(output_lens[j]),
+                                    tic))
+    requests = sorted(requests)
+    return requests
  
 
 def generate_requests(num_adapters, alpha, req_rate, cv, duration,
@@ -112,8 +134,12 @@ def generate_requests(num_adapters, alpha, req_rate, cv, duration,
         return generate_requests_on_off(
                 num_adapters, alpha, req_rate, cv, duration,
                 input_range, output_range, on_off, adapter_dirs, seed)
-    if mode == "increase":
+    elif mode == "increase":
         return generate_requests_increase(
+                num_adapters, alpha, req_rate, cv, duration,
+                input_range, output_range, mode, adapter_dirs, seed)
+    elif mode == "uniform":
+        return generate_requests_uniform(
                 num_adapters, alpha, req_rate, cv, duration,
                 input_range, output_range, mode, adapter_dirs, seed)
 

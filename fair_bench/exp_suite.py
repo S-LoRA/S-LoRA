@@ -26,6 +26,21 @@ BenchmarkConfig = namedtuple(
 )
 
 
+paper_suite = {
+    "overload": BenchmarkConfig(
+        num_adapters = [2],
+        alpha = [-1],
+        req_rate = [[1, 2]],
+        cv = [-1],
+        duration = [60 * 10],
+        input_range = [[250, 300]],
+        output_range = [[250, 300]],
+        on_off = [-1],
+        mode = ["uniform"],
+    ),
+}
+
+
 debug_suite = {
     "default": BenchmarkConfig(
         num_adapters = [2],
