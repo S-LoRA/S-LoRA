@@ -1,7 +1,7 @@
 import argparse
 import json
 
-from plot.plot_utils import plot
+from plot_utils import plot
 
 
 def get_req_rate_over_time(responses, T, window, x_ticks, users):
@@ -49,7 +49,7 @@ def get_response_time_over_time(responses, T, window, x_ticks, users):
             cnt = 0
             for response in responses:
                 if response["adapter_dir"] == user_name:
-                    req_time = response["req_time"]
+                    req_time = response["req_time"] + response["first_token_latency"]
                     response_time = response["first_token_latency"]
                     if l <= req_time and req_time <= r:
                         y[-1][i] += response_time
