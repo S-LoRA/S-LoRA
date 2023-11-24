@@ -25,7 +25,7 @@ if __name__ == "__main__":
     parser.add_argument("--enable-abort", action="store_true")
 
     parser.add_argument("--fair-weights", type=int, default=[], action="append")
-    parser.add_argument("--scheduler", type=str, default="fair")
+    parser.add_argument("--scheduler", type=str, default="vtc_fair")
     args = parser.parse_args()
 
     base_model = BASE_MODEL[args.model_setting]

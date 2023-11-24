@@ -10,7 +10,7 @@ from slora.utils.infer_utils import  calculate_time
 from slora.server.router.req_queue import ReqQueue
 
 
-class NaiveFairReqQueue(ReqQueue):
+class LCFReqQueue(ReqQueue):
 
     def __init__(self, max_total_tokens, batch_max_tokens, running_max_req_size,
                  adapter_dirs, fair_weights,

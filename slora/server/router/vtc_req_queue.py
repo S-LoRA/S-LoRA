@@ -10,7 +10,7 @@ from slora.utils.infer_utils import  calculate_time
 from slora.server.router.req_queue import ReqQueue
 
 
-class FairReqQueue(ReqQueue):
+class VTCReqQueue(ReqQueue):
 
     def __init__(self, max_total_tokens, batch_max_tokens, running_max_req_size,
                  adapter_dirs, fair_weights,
@@ -39,6 +39,14 @@ class FairReqQueue(ReqQueue):
             self.served[req.adapter_dir] = 0
         else:
             self.user_req_list[req.adapter_dir].append(req)
+
+        # waiting queue was empty before
+        if len(self.user_req_list[req.adapter_dir]) == 1:
+            # lift counter
+            cnts = [v for k, v in self.served.items()
+                      if (len(self.user_req_list[k]) > 0 and k != req.adapter_dir)]
+            if len(cnts) > 0:
+                self.served[req.adapter_dir] = min(cnts)
 
     
     def _init_cache_list(self, current_batch:Batch, lora_ranks):
@@ -85,19 +93,6 @@ class FairReqQueue(ReqQueue):
             return None
         if len(self.served) == 0:
             return None
-        
-        if current_batch is None or len(current_batch.reqs) == 0:
-            virtual_counter = max(self.served.values())
-        else:
-            last_req = current_batch.reqs[-1]
-            virtual_counter = (self.served[last_req.adapter_dir]
-                            - last_req.input_len - len(last_req.output_ids))
-
-        for adapter_dir, _ in self.user_req_list.items():
-            # if self.served[adapter_dir] < virtual_counter:
-            #     print(self.served)
-            #     print(current_batch.reqs)
-            self.served[adapter_dir] = max(self.served[adapter_dir], virtual_counter)
         
         self._init_cache_list(current_batch, lora_ranks)
         can_run_list = []

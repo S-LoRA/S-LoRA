@@ -23,10 +23,40 @@ from slora.models.peft.lora_adapter import get_lora_config
 from slora.server.router.profiler import AlphaModel, BetaModel
 from slora.server.router.abort_req_queue import AbortReqQueue
 from slora.server.router.cluster_req_queue import ClusterReqQueue
-from slora.server.router.fair_req_queue import FairReqQueue
-from slora.server.router.naive_fair_req_queue import NaiveFairReqQueue
+from slora.server.router.vtc_max_req_queue import VTCMaxReqQueue
+from slora.server.router.vtc_req_queue import VTCReqQueue
+from slora.server.router.lcf_req_queue import LCFReqQueue
 from slora.server.router.pets_req_queue import PETSReqQueue
 from slora.server.router.peft_req_queue import PEFTReqQueue
+
+
+def get_scheduler(input_params, adapter_dirs):
+    if input_params.scheduler == "vtc_max_fair":
+        return VTCMaxReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                              input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
+    elif input_params.scheduler == "lcf_fair":
+        return LCFReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                                 input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
+    elif input_params.scheduler == "vtc_fair":
+        return VTCReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                           input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
+    elif input_params.scheduler == "pets":
+        return PETSReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                            input_params.running_max_req_size)
+    elif input_params.scheduler == "peft":
+        return PEFTReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                            input_params.running_max_req_size)
+    elif input_params.batch_num_adapters is not None:
+        return ClusterReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                               input_params.running_max_req_size, input_params.batch_num_adapters)
+    elif input_params.enable_abort:
+        return AbortReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                             input_params.running_max_req_size)
+    elif input_params.scheduler == "slora":
+        return ReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                        input_params.running_max_req_size)
+    else:
+        raise Exception("unrecognized scheduler")
 
 
 class RouterManager:
@@ -54,27 +84,7 @@ class RouterManager:
             self.lora_ranks[lora_dir] = config["r"]
         self.lora_ranks[None] = 0
 
-        if input_params.scheduler == "fair":
-            self.req_queue = FairReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                          input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
-        elif input_params.scheduler == "naive_fair":
-            self.req_queue = NaiveFairReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                               input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
-        elif input_params.scheduler == "pets":
-            self.req_queue = PETSReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                          input_params.running_max_req_size)
-        elif input_params.scheduler == "peft":
-            self.req_queue = PEFTReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                          input_params.running_max_req_size)
-        elif input_params.batch_num_adapters is not None:
-            self.req_queue = ClusterReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                             input_params.running_max_req_size, input_params.batch_num_adapters)
-        elif input_params.enable_abort:
-            self.req_queue = AbortReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                           input_params.running_max_req_size)
-        else:
-            self.req_queue = ReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                      input_params.running_max_req_size)
+        self.req_queue = get_scheduler(input_params, adapter_dirs)
 
         self.running_batch: Batch = None
         self.eos_id = eos_id
