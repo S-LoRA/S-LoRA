@@ -46,7 +46,7 @@ class VTCReqQueue(ReqQueue):
             cnts = [v for k, v in self.served.items()
                       if (len(self.user_req_list[k]) > 0 and k != req.adapter_dir)]
             if len(cnts) > 0:
-                self.served[req.adapter_dir] = min(cnts)
+                self.served[req.adapter_dir] = max(self.served[req.adapter_dir], min(cnts))
 
     
     def _init_cache_list(self, current_batch:Batch, lora_ranks):

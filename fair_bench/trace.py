@@ -134,6 +134,45 @@ def generate_requests_poisson_short_long(num_adapters, alpha, req_rate, cv, dura
     return requests
 
 
+def generate_requests_poisson_short_long_2(num_adapters, alpha, req_rate, cv, duration,
+                                           input_range, output_range, on_off, mode,
+                                           adapter_dirs, # (base_dir, adapter_dir))
+                                           seed=42):
+    assert num_adapters == 2 and len(req_rate) == 2
+    np.random.seed(seed)
+
+    tot_req = int(sum(req_rate) * duration)
+
+    # generate adapter id
+    probs = np.random.rand(tot_req)
+    ind = (probs > (req_rate[0] / (req_rate[0] + req_rate[1]))).astype(int)
+
+    # generate input output len
+    input_lens = np.random.randint(input_range[0], input_range[1], tot_req)
+    output_lens = np.random.randint(output_range[0], output_range[1], tot_req)
+
+    # generate timestamp
+    requests = []
+    tic = 0
+    shape = 1 / (cv * cv)
+    scale = cv * cv / sum(req_rate)
+    intervals = np.random.gamma(shape, scale, tot_req)
+    for i in range(tot_req):
+        tic += intervals[i]
+        if ind[i] == 0:
+            if on_off != -1 and int(tic // on_off) & 1 == 1:
+                continue
+            input_len = output_lens[i]
+            output_len = input_lens[i]
+        else:
+            input_len = input_lens[i]
+            output_len = output_lens[i]
+        requests.append(Request(i, adapter_dirs[ind[i]][0], adapter_dirs[ind[i]][1],
+                                dummy_prompt(input_len), int(input_len), int(output_len),
+                                tic))
+    return requests
+
+
 def generate_requests_poisson(num_adapters, alpha, req_rate, cv, duration,
                               input_range, output_range, on_off, mode,
                               adapter_dirs, # (base_dir, adapter_dir))
@@ -181,6 +220,10 @@ def generate_requests(num_adapters, alpha, req_rate, cv, duration,
                 input_range, output_range, on_off, mode, adapter_dirs, seed)
     elif mode == "poisson-short-long":
         return generate_requests_poisson_short_long(
+                num_adapters, alpha, req_rate, cv, duration,
+                input_range, output_range, on_off, mode, adapter_dirs, seed)
+    elif mode == "poisson-short-long-2":
+        return generate_requests_poisson_short_long_2(
                 num_adapters, alpha, req_rate, cv, duration,
                 input_range, output_range, on_off, mode, adapter_dirs, seed)
     elif mode == "poisson":

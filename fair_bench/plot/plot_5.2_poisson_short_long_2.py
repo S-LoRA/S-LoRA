@@ -40,7 +40,7 @@ def plot(names, x, ys, x_label, y_label, figname):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, default="../all_results_on_off_less.jsonl")
+    parser.add_argument("--input", type=str, default="../all_results_poisson_short_long_2.jsonl")
     args = parser.parse_args()
 
     exps = []
@@ -70,9 +70,9 @@ if __name__ == "__main__":
         response_time = get_response_time_over_time(responses, T, window, x_ticks, users)
 
     # plot
-    plot(users, x_ticks, req_rate, "Time (s)", "Request Rate (token/s)", "sec5.2_on_off_less_req_rate")
-    plot(users, x_ticks, throughput, "Time (s)", "Throughput (Token/s)", "sec5.2_on_off_less_throughput")
-    plot(users, x_ticks, response_time, "Time (s)", "Response Time (s)", "sec5.2_on_off_less_response_time")
+    plot(users, x_ticks, req_rate, "Time (s)", "Request Rate (token/s)", "sec5.2_poisson_short_long_2_req_rate")
+    plot(users, x_ticks, throughput, "Time (s)", "Throughput (Token/s)", "sec5.2_poisson_short_long_2_throughput")
+    plot(users, x_ticks, response_time, "Time (s)", "Response Time (s)", "sec5.2_poisson_short_long_2_response_time")
 
     cnt = {}
     for user_name in users:

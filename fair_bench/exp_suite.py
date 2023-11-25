@@ -104,6 +104,17 @@ paper_suite = {
         on_off = [-1],
         mode = ["poisson-short-long"],
     ),
+    "poisson_short_long_2": BenchmarkConfig(
+        num_adapters = [2],
+        alpha = [-1],
+        req_rate = [[8, 1.5]],
+        cv = [-1],
+        duration = [60 * 10],
+        input_range = [[32, 33]],
+        output_range = [[512, 513]],
+        on_off = [-1],
+        mode = ["poisson-short-long-2"],
+    ),
 }
 
 

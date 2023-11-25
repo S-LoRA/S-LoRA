@@ -14,6 +14,8 @@ python run_exp.py --suite poisson_on_off_overload
 
 python run_exp.py --suite poisson_short_long
 
+python run_exp.py --suite poisson_short_long_2
+
 # ---------------------------------
 
 # python launch_server.py --dummy --fair 1 --fair 2

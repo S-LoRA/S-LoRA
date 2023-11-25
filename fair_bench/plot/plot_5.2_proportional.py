@@ -5,18 +5,25 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
 
 # from plot.plot_utils import plot
-from visualize import get_req_rate_over_time, get_throughput_over_time, get_response_time_over_time
+from visualize import (get_req_rate_over_time, get_throughput_over_time,
+                       get_response_time_over_time, to_client_name,
+                       FONTSIZE, MARKERSIZE, legend_x, legend_y, ylabel_x, ylabel_y)
 
 
 def plot(names, x, ys, x_label, y_label, figname):
-    FONTSIZE = 15
+    FONTSIZE = 18
+    MARKERSIZE = 8
+    legend_x = 0.42
+    legend_y = 1.1
+    ylabel_x = -0.1
+    ylabel_y = 0.5
 
     legends = []
     curves = []
     fig, ax = plt.subplots()
     for i, (name, y) in enumerate(zip(names, ys)):
-        curves.append(ax.plot(x, y, color=f"C{i}", marker=".", markersize=FONTSIZE)[0])
-        legends.append(name)
+        curves.append(ax.plot(x, y, color=f"C{i}", marker=".", markersize=MARKERSIZE)[0])
+        legends.append(to_client_name(name))
 
     ax.grid(True, linestyle='-', linewidth=0.5, alpha=0.5, color="black")
     y_format = StrMethodFormatter("{x:.1f}")
@@ -24,15 +31,15 @@ def plot(names, x, ys, x_label, y_label, figname):
     ax.set_xlim(0)
     ax.set_ylim(0)
     ax.set_xlabel(x_label, fontsize=FONTSIZE)
-    ax.tick_params(axis='both', which='major', labelsize=15, length=2, width=1)
+    ax.tick_params(axis='both', which='major', labelsize=FONTSIZE, length=2, width=1)
     ax.yaxis.set_major_formatter(y_format)
-    fig.legend(curves, legends, loc="upper center", bbox_to_anchor=(0.47, 0.97),
+    fig.legend(curves, legends, loc="upper center", bbox_to_anchor=(legend_x, legend_y),
                ncol=len(legends) // min(2, len(legends) // 4 + 1), fontsize=FONTSIZE)
-    fig.text(0.04, 0.5, y_label, va='center', rotation='vertical', fontsize=FONTSIZE)
+    fig.text(ylabel_x, ylabel_y, y_label, va='center', rotation='vertical', fontsize=FONTSIZE)
     fig.subplots_adjust(wspace=0.2)
 
     # Save figure
-    fig.set_size_inches((12, 8))
+    fig.set_size_inches((6, 4))
     figname = f"{figname}.pdf"
     plt.savefig(figname, bbox_inches="tight")
     print(f"Saved figure to {figname}")
@@ -63,7 +70,7 @@ if __name__ == "__main__":
         window = 60
         x_ticks = [T / num_x * i for i in range(num_x)]
 
-        users = list(set([response["adapter_dir"] for response in responses]))
+        users = sorted(list(set([response["adapter_dir"] for response in responses])))
 
         req_rate = get_req_rate_over_time(responses, T, window, x_ticks, users)
         throughput = get_throughput_over_time(responses, T, window, x_ticks, users)

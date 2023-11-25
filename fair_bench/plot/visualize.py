@@ -4,6 +4,23 @@ import json
 from plot_utils import plot
 
 
+FONTSIZE = 25
+MARKERSIZE = 8
+legend_x = 0.44
+legend_y = 1.15
+ylabel_x = -0.13
+ylabel_y = 0.5
+
+
+def to_client_name(adapter_name):
+    if adapter_name == "dummy-lora-7b-rank-8-0":
+        return "Client 1"
+    if adapter_name == "dummy-lora-7b-rank-8-1":
+        return "Client 2"
+    if adapter_name == "dummy-lora-7b-rank-8-2":
+        return "Client 3"
+
+
 def get_req_rate_over_time(responses, T, window, x_ticks, users):
     y = []
     for i, user_name in enumerate(users):
