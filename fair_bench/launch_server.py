@@ -18,6 +18,7 @@ if __name__ == "__main__":
 
     parser.add_argument("--scheduler", type=str, default="vtc_fair")
     parser.add_argument("--fair-weights", type=int, default=[], action="append")
+    parser.add_argument("--enable-abort", action="store_true")
     args = parser.parse_args()
     # TODO remove lora
 
@@ -32,6 +33,9 @@ if __name__ == "__main__":
         cmd += " --swap"
         cmd += f" --scheduler {args.scheduler}"
         cmd += " --no-lora"
+        
+        if args.enable_abort:
+            cmd += " --enable-abort"
 
         num_iter = args.num_adapter // len(adapter_dirs) + 1
         for i in range(num_iter):
