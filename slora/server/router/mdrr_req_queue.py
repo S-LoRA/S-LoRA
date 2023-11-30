@@ -22,6 +22,8 @@ class MDRRReqQueue(ReqQueue):
         self.user_req_list = {}
         self.active_list = deque()
         self.quantum = max_total_tokens / 20
+        # record last oom adapter
+        self.last_oom_adapter = None
 
         self.adapter_dirs = adapter_dirs
         self.fair_weights = fair_weights
@@ -106,6 +108,12 @@ class MDRRReqQueue(ReqQueue):
                 break
             # pop the first adapter in active list
             adapter_dir = self.active_list.popleft()
+            # if last oom adapter's dcounter less than 0, skip it and add it to active list
+            if adapter_dir == self.last_oom_adapter:
+                if self.dcounter[adapter_dir] < 0:
+                    self.active_list.append(adapter_dir)
+                    self.last_oom_adapter = None
+                    continue
             #  add quantum if dcounter less than 0
             if self.dcounter[adapter_dir] <= 0:
                 self.dcounter[adapter_dir] += self.quantum
@@ -126,6 +134,7 @@ class MDRRReqQueue(ReqQueue):
                 else:
                     # insert at the head of active list
                     self.active_list.appendleft(adapter_dir)
+                    self.last_oom_adapter = adapter_dir
                     OOM = True
                     break
             if OOM:
