@@ -20,7 +20,7 @@ class LShareReqQueue(ReqQueue):
         self.apprx_bs = self.init_bs
         self.last_req_num = 0
         self.last_time = time.time()
-        self.rate_limit = 50 # per minute
+        self.rate_limit = 20 # per minute
         self.all_req_time_stamp = {}
         self.total_aborted = {}
         

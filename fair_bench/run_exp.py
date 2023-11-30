@@ -93,10 +93,10 @@ async def send_request(
             # #     print(json.loads(output))
             # break
 
-    if first_token_latency is None: # avoid the case where the request is aborted
-        return None
     request_end_time = time.time()
     request_latency = request_end_time - request_start_time
+    if first_token_latency is None: # avoid the case where the request is aborted
+        first_token_latency = request_latency = -1
     print(f"req_id {req_id} req_time {req_time} adapter_dir {adapter_dir} "
           f"prompt_len {prompt_len} output_len {output_len} "
           f"request_latency {request_latency:.2f} s, first_token_latency {first_token_latency:.2f} s")
@@ -123,7 +123,6 @@ async def benchmark(
                                                 debug))
         tasks.append(task)
     responses = await asyncio.gather(*tasks)
-    responses = [x for x in responses if x is not None]
     return responses
 
 

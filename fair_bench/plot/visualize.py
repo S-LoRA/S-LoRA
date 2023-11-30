@@ -40,6 +40,10 @@ def get_req_rate_over_time(responses, T, window, x_ticks, users):
 
 def get_throughput_over_time(responses, T, window, x_ticks, users):
     y = []
+    sum = 0
+    for r in responses:
+        if r["first_token_latency"] != -1:
+            sum += 1
     for i, user_name in enumerate(users):
         y.append([0] * len(x_ticks))
         for i, x in enumerate(x_ticks):
@@ -51,7 +55,11 @@ def get_throughput_over_time(responses, T, window, x_ticks, users):
                     end_time = response["req_time"] + response["request_latency"]
                     num_token = response["output_len"]
                     overlap = max(min(r, end_time) - max(l, start_time), 0)
-                    y[-1][i] += num_token * overlap / (end_time - start_time)
+                    if end_time == start_time: # for aborted requests
+                        assert response["first_token_latency"] == -1, "first_token_latency should be -1 for aborted requests"
+                        y[-1][i] += 0
+                    else:
+                        y[-1][i] += num_token * overlap / (end_time - start_time)
             y[-1][i] /= window
     return y
 
@@ -69,8 +77,9 @@ def get_response_time_over_time(responses, T, window, x_ticks, users):
                     req_time = response["req_time"] + response["first_token_latency"]
                     response_time = response["first_token_latency"]
                     if l <= req_time and req_time <= r:
-                        y[-1][i] += response_time
-                        cnt += 1
+                        if not response_time == -1: # for aborted requests
+                            y[-1][i] += response_time
+                            cnt += 1
             if cnt == 0:
                 y[-1][i] = None
             else:
