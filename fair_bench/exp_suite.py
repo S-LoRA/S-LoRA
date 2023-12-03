@@ -30,7 +30,7 @@ paper_suite = {
     "ablation_lshare": BenchmarkConfig(
         num_adapters = [2],
         alpha = [-1],
-        req_rate = [[0.1, 1]],
+        req_rate = [[0.2, 0.8]],
         cv = [-1],
         duration = [60*5],
         input_range = [[256, 257]],
