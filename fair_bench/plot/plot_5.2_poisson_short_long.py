@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import StrMethodFormatter
 
 # from plot.plot_utils import plot
-from visualize import (get_req_rate_over_time, get_throughput_over_time,
+from visualize import (get_req_rate_over_time, get_throughput_over_time, get_service_over_time,
                        get_response_time_over_time, to_client_name,
                        FONTSIZE, MARKERSIZE, legend_x, legend_y, ylabel_x, ylabel_y)
 
@@ -67,11 +67,13 @@ if __name__ == "__main__":
 
         req_rate = get_req_rate_over_time(responses, T, window, x_ticks, users)
         throughput = get_throughput_over_time(responses, T, window, x_ticks, users)
+        service = get_service_over_time(responses, T, window, x_ticks, users)
         response_time = get_response_time_over_time(responses, T, window, x_ticks, users)
 
     # plot
     plot(users, x_ticks, req_rate, "Time (s)", "Request Rate (token/s)", "sec5.2_poisson_short_long_req_rate")
     plot(users, x_ticks, throughput, "Time (s)", "Throughput (Token/s)", "sec5.2_poisson_short_long_throughput")
+    plot(users, x_ticks, service, "Time (s)", "Service (Token/s)", "sec5.2_poisson_short_long_service")
     plot(users, x_ticks, response_time, "Time (s)", "Response Time (s)", "sec5.2_poisson_short_long_response_time")
 
     cnt = {}

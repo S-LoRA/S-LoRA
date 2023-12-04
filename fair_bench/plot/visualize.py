@@ -63,6 +63,26 @@ def get_throughput_over_time(responses, T, window, x_ticks, users):
             y[-1][i] /= window
     return y
 
+def cost_func(input_len, output_len):
+    return input_len + 2*output_len
+
+def get_service_over_time(responses, T, window, x_ticks, users):
+    y = []
+    for i, user_name in enumerate(users):
+        y.append([0] * len(x_ticks))
+        for i, x in enumerate(x_ticks):
+            l = x - window / 2
+            r = x + window / 2
+            for response in responses:
+                if response["adapter_dir"] == user_name:
+                    start_time = response["req_time"] + response["first_token_latency"]
+                    end_time = response["req_time"] + response["request_latency"]
+                    service = cost_func(response['prompt_len'],response["output_len"])
+                    overlap = max(min(r, end_time) - max(l, start_time), 0)
+                    y[-1][i] += service * overlap / (end_time - start_time)
+            y[-1][i] /= window
+    return y
+
 
 def get_response_time_over_time(responses, T, window, x_ticks, users):
     y = []
@@ -115,12 +135,14 @@ if __name__ == "__main__":
         users = list(set([response["adapter_dir"] for response in responses]))
 
         req_rate = get_req_rate_over_time(responses, T, window, x_ticks, users)
+        service = get_service_over_time(responses, T, window, x_ticks, users)
         throughput = get_throughput_over_time(responses, T, window, x_ticks, users)
         response_time = get_response_time_over_time(responses, T, window, x_ticks, users)
 
     # plot
     plot(users, x_ticks, req_rate, "time progression (s)", "req_rate (token/s)", "req_rate")
     plot(users, x_ticks, throughput, "time progression (s)", "throughput (token/s)", "throughput")
+    plot(users, x_ticks, service, "time progression (s)", "service (token/s)", "service")
     plot(users, x_ticks, response_time, "time progression (s)", "response_time (s)", "response_time")
 
     cnt = {}
