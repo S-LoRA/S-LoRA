@@ -8,7 +8,7 @@ FONTSIZE = 25
 MARKERSIZE = 8
 legend_x = 0.44
 legend_y = 1.15
-ylabel_x = -0.13
+ylabel_x = -0.15
 ylabel_y = 0.5
 
 
