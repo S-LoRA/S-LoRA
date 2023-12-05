@@ -3,11 +3,13 @@ import itertools
 
 BASE_MODEL = {
         "S1": "huggyllama/llama-7b",
+        "S4": "dummy-llama-13b",
         "Real": "huggyllama/llama-7b",
 }
 
 LORA_DIR = {
         "S1": ["dummy-lora-7b-rank-8"],
+        "S4": ["dummy-lora-13b-rank-8"],
         "Real": ["tloen/alpaca-lora-7b"],
 }
 
@@ -46,6 +48,39 @@ paper_suite = {
         duration = [60 * 10],
         input_range = [[256, 257]],
         output_range = [[256, 257]],
+        on_off = [-1],
+        mode = ["uniform"],
+    ),
+    "overload-s4": BenchmarkConfig(
+        num_adapters = [2],
+        alpha = [-1],
+        req_rate = [[4, 8]],
+        cv = [-1],
+        duration = [60 * 10],
+        input_range = [[256, 257]],
+        output_range = [[256, 257]],
+        on_off = [-1],
+        mode = ["uniform"],
+    ),
+    "overload-s4-short": BenchmarkConfig(
+        num_adapters = [2],
+        alpha = [-1],
+        req_rate = [[8, 16]],
+        cv = [-1],
+        duration = [60 * 10],
+        input_range = [[128, 129]],
+        output_range = [[128, 129]],
+        on_off = [-1],
+        mode = ["uniform"],
+    ),
+    "overload-s4-long": BenchmarkConfig(
+        num_adapters = [2],
+        alpha = [-1],
+        req_rate = [[2, 4]],
+        cv = [-1],
+        duration = [60 * 10],
+        input_range = [[512, 513]],
+        output_range = [[512, 513]],
         on_off = [-1],
         mode = ["uniform"],
     ),
