@@ -205,6 +205,17 @@ paper_suite = {
         on_off = [-1],
         mode = ["poisson-short-long-2"],
     ),
+    "dist_shift": BenchmarkConfig(
+        num_adapters = [2],
+        alpha = [-1],
+        req_rate = [[-1, -1]],
+        cv = [-1],
+        duration = [60 * 15],
+        input_range = [[256, 257]],
+        output_range = [[256, 257]],
+        on_off = [-1],
+        mode = ["dist_shift"],
+    ),
 }
 
 

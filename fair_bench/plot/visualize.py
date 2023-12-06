@@ -5,11 +5,13 @@ from plot_utils import plot
 
 
 FONTSIZE = 25
-MARKERSIZE = 8
+MARKERSIZE = 5
 legend_x = 0.44
 legend_y = 1.15
 ylabel_x = -0.15
 ylabel_y = 0.5
+
+MARKERS = ["s", "o", "v"]
 
 
 def to_client_name(adapter_name):

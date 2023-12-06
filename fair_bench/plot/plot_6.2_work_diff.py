@@ -74,7 +74,7 @@ def plot(baslines, x, ys, x_label, y_label, figname):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--input", type=str, default="../all_results_proportional.jsonl")
+    parser.add_argument("--name", type=str, default="dist_shift")
     args = parser.parse_args()
 
     # baselines = ['VTC','LCF','FCFS']
@@ -95,7 +95,6 @@ if __name__ == "__main__":
                     exps.append({})
                     exps[-1]["config"] = json.loads(line)["config"]
                     exps[-1]["result"] = json.loads(line)["result"]
-
             # get data points
             for exp in exps:
                 config = exp["config"]

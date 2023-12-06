@@ -206,6 +206,68 @@ def generate_requests_poisson(num_adapters, alpha, req_rate, cv, duration,
     return requests
 
 
+def generate_requests_dist_shift(num_adapters, alpha, req_rate, cv, duration,
+                                 input_range, output_range, on_off, mode,
+                                 adapter_dirs, # (base_dir, adapter_dir))
+                                 seed=42):
+    assert num_adapters == 2 and len(req_rate) == 2
+    assert req_rate == [-1, -1]
+    np.random.seed(seed)
+
+    requests = []
+
+    # on_off phase
+    req_rate = [0.5, 2]
+    on_off = 60
+    for i in range(num_adapters):
+        tot_req = int(req_rate[i] * duration / 3)
+        input_lens = np.random.randint(input_range[0], input_range[1], tot_req)
+        output_lens = np.random.randint(output_range[0], output_range[1], tot_req)
+        tic = np.random.rand() * 1 / req_rate[i]
+        for j in range(tot_req):
+            tic += 1 / req_rate[i]
+            if on_off != -1 and i == 0 and int(tic // on_off) & 1 == 1:
+                continue
+            requests.append(Request(len(requests), adapter_dirs[i][0], adapter_dirs[i][1],
+                                    dummy_prompt(input_lens[j]), int(input_lens[j]), int(output_lens[j]),
+                                    tic))
+
+    # overload phase
+    req_rate = [1, 1]
+    on_off = -1
+    for i in range(num_adapters):
+        tot_req = int(req_rate[i] * duration / 3)
+        input_lens = np.random.randint(input_range[0], input_range[1], tot_req)
+        output_lens = np.random.randint(output_range[0], output_range[1], tot_req)
+        tic = duration / 3 + np.random.rand() * 1 / req_rate[i]
+        for j in range(tot_req):
+            tic += 1 / req_rate[i]
+            if on_off != -1 and i == 0 and int(tic // on_off) & 1 == 1:
+                continue
+            requests.append(Request(len(requests), adapter_dirs[i][0], adapter_dirs[i][1],
+                                    dummy_prompt(input_lens[j]), int(input_lens[j]), int(output_lens[j]),
+                                    tic))
+
+    # proportional phase
+    req_rate = [0.5, 1.5]
+    on_off = -1
+    for i in range(num_adapters):
+        tot_req = int(req_rate[i] * duration / 3)
+        input_lens = np.random.randint(input_range[0], input_range[1], tot_req)
+        output_lens = np.random.randint(output_range[0], output_range[1], tot_req)
+        tic = duration / 3 * 2 + np.random.rand() * 1 / req_rate[i]
+        for j in range(tot_req):
+            tic += 1 / req_rate[i]
+            if on_off != -1 and i == 0 and int(tic // on_off) & 1 == 1:
+                continue
+            requests.append(Request(len(requests), adapter_dirs[i][0], adapter_dirs[i][1],
+                                    dummy_prompt(input_lens[j]), int(input_lens[j]), int(output_lens[j]),
+                                    tic))
+
+    requests = sorted(requests)
+    return requests
+
+
 def generate_requests(num_adapters, alpha, req_rate, cv, duration,
                       input_range, output_range, on_off, mode,
                       adapter_dirs, # (base_dir, adapter_dir)
@@ -228,6 +290,10 @@ def generate_requests(num_adapters, alpha, req_rate, cv, duration,
                 input_range, output_range, on_off, mode, adapter_dirs, seed)
     elif mode == "poisson":
         return generate_requests_poisson(
+                num_adapters, alpha, req_rate, cv, duration,
+                input_range, output_range, on_off, mode, adapter_dirs, seed)
+    elif mode == "dist_shift":
+        return generate_requests_dist_shift(
                 num_adapters, alpha, req_rate, cv, duration,
                 input_range, output_range, on_off, mode, adapter_dirs, seed)
 
