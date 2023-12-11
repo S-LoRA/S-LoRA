@@ -50,6 +50,16 @@ class QuantLlama2TpPartModel(Llama2TpPartModel):
         # build quant Linear
         [weight.build_quant_layer() for weight in self.trans_layers_weight]
 
+        # exllama buffer
+        try:
+            from slora.models.gptq.exllama import create_exllama_buffers, set_device
+            print("Calling exllama.set_device and exllama.create_exllama_buffers...")
+            # set_device(torch.device(f"cuda:{self.tp_rank_}"))
+            set_device(torch.device(f"cuda:{self.tp_rank_}"))
+            create_exllama_buffers()
+        except ImportError:
+            print("Error occurs during exllama.set_device and exllama.create_exllama_buffers!")
+
     def _init_config(self):
         super()._init_config()
         # rename key
@@ -60,15 +70,6 @@ class QuantLlama2TpPartModel(Llama2TpPartModel):
         return 
 
     def _init_quantize_config(self):
-        try:
-            from slora.models.gptq.exllama import create_exllama_buffers, set_device
-            HAS_EXLLAMA = True
-            set_device(torch.device(f"cuda:{self.tp_rank_}"))
-            create_exllama_buffers()
-
-        except ImportError:
-            pass
-
         if self.dummy:
             self.quantize_config = get_quantize_config_json(self.weight_dir_, self.mode)
         else:
