@@ -45,6 +45,7 @@ conda activate slora
 # Optional: Install CUDA via conda for a smoother installation experience,
 # but you may need to manually set the Anaconda path variables.
 # conda install cuda -c nvidia/label/cuda-11.8.0
+# set environment variables: export TORCH_CUDA_ARCH_LIST="8.0 8.6"
 pip install torch==2.0.1
 pip install -e .
 ```
