@@ -39,6 +39,9 @@ class LoraUnorderedBatchInfer:
         
         self.kv_embed_dim = base_model.tp_k_head_num_ * base_model.head_dim_
 
+        self.world_size = self.base_model.world_size_
+        self.tp_rank = self.base_model.tp_rank_
+
 
     @torch.no_grad()
     def forward(
@@ -482,3 +485,83 @@ class LoraUnorderedBatchInfer:
             # delta_oA = None
         return o
 
+
+def all_gather_token(out_tensor, in_tensor, inter_tensor, r_size):
+    dist.all_gather([inter_tensor[i] for i in range(inter_tensor.shape[0])],
+                    in_tensor, group=None, async_op=False)
+    launch_segmented_copy(inter_tensor, r_size, out_tensor)
+
+
+import cupy
+
+segmented_copy_kernel = cupy.RawKernel(r'''
+#include <cuda_fp16.h>
+
+extern "C" __global__
+void kernel(const half* __restrict__ all_gather_res,
+            const long int* __restrict__ r_size,
+            half* __restrict__ output,
+            int tp_size, int bs, int partitioned_r) {
+  int cur_b = blockIdx.x;
+  int cur_r = r_size[cur_b];
+  int t_id = threadIdx.x;
+
+  if (t_id >= cur_r * tp_size) {
+    return;
+  }
+
+  int i = t_id / cur_r;
+  int j = t_id % cur_r;
+
+  output[cur_b * partitioned_r * tp_size + t_id] = (
+    all_gather_res[i * bs * partitioned_r + cur_b * partitioned_r + j]);
+}
+''', "kernel")
+
+def launch_segmented_copy(all_gather_res, r_size, output):
+    tp_size, bs, partitioned_r = all_gather_res.shape
+    assert output.shape[0] == bs and output.shape[1] == tp_size * partitioned_r
+    grid_size = (bs,)
+    block_size = (tp_size * partitioned_r,)
+
+    segmented_copy_kernel(grid_size, block_size,
+        (cupy.asarray(all_gather_res),
+         cupy.asarray(r_size),
+         cupy.asarray(output),
+         tp_size, bs, partitioned_r))
+
+
+segmented_add_kernel = cupy.RawKernel(r'''
+#include <cuda_fp16.h>
+
+extern "C" __global__
+void kernel(const half* __restrict__ in_tensor,
+            half* __restrict__ out_tensor,
+            int rank, int tp_size, int split_h, int BLOCK_SIZE) {
+  int cur_b = blockIdx.x;
+  int t_id = threadIdx.x;
+
+  for (int i = t_id; i < split_h; i += BLOCK_SIZE) {
+    out_tensor[cur_b * split_h * tp_size + split_h * rank + i] += (
+       in_tensor[cur_b * split_h + i]);
+  }
+}
+''', "kernel")
+
+
+def launch_segmented_add(in_tensor, rank, tp_size, out_tensor):
+    BLOCK_SIZE = 512
+    grid_size = (len(in_tensor),)
+    block_size = (BLOCK_SIZE,)
+
+    segmented_add_kernel(grid_size, block_size,
+        (cupy.asarray(in_tensor),
+         cupy.asarray(out_tensor),
+         rank, tp_size, in_tensor.shape[1],
+         BLOCK_SIZE))
+
+
+if __name__ == "__main__":
+    a = torch.ones((10, 10), dtype=torch.float16, device="cuda")
+    b = torch.ones((10, 10), dtype=torch.float16, device="cuda")
+    launch_segmented_add(a, 0, 0, b)
