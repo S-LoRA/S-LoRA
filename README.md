@@ -4,6 +4,14 @@
 <img src="figures/serving_perf.png" alt="perf" width="700"/>
 </p>
 
+---
+
+*Latest News*
+- A fair scheduler VTC ([paper](https://arxiv.org/abs/2401.00588)) has been integrated into S-LoRA.
+  See file `slora/server/router/vtc_req_queue.py`.
+
+---
+
 ## Abstract
 The "pretrain-then-finetune" paradigm is commonly adopted in the deployment
 of large language models. Low-Rank Adaptation (LoRA), a parameter-efficient
@@ -152,12 +160,18 @@ We also learned a lot from the following projects when developing S-LoRA.
 
 ## Citation
 ```bibtex
-@misc{sheng2023slora,
-      title={S-LoRA: Serving Thousands of Concurrent LoRA Adapters}, 
-      author={Ying Sheng and Shiyi Cao and Dacheng Li and Coleman Hooper and Nicholas Lee and Shuo Yang and Christopher Chou and Banghua Zhu and Lianmin Zheng and Kurt Keutzer and Joseph E. Gonzalez and Ion Stoica},
-      year={2023},
-      eprint={2311.03285},
-      archivePrefix={arXiv},
-      primaryClass={cs.LG}
+@article{sheng2023slora,
+  title={S-LoRA: Serving Thousands of Concurrent LoRA Adapters},
+  author={Sheng, Ying and Cao, Shiyi and Li, Dacheng and Hooper, Coleman and Lee, Nicholas and Yang, Shuo and Chou, Christopher and Zhu, Banghua and Zheng, Lianmin and Keutzer, Kurt and Gonzalez, Joseph E. and Stoica, Ion},
+  journal={arXiv preprint arXiv:2311.03285},
+  year={2023}
+}
+```
+```bibtex
+@article{sheng2023fairness,
+  title={Fairness in Serving Large Language Models},
+  author={Sheng, Ying and Cao, Shiyi and Li, Dacheng and Zhu, Banghua and Li, Zhuohan and Zhuo, Danyang and Gonzalez, Joseph E and Stoica, Ion},
+  journal={arXiv preprint arXiv:2401.00588},
+  year={2023}
 }
 ```
