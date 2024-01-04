@@ -21,10 +21,34 @@ from .stats import Stats
 from slora.server.input_params import InputParams
 from slora.models.peft.lora_adapter import get_lora_config
 from slora.server.router.profiler import AlphaModel, BetaModel
+from slora.server.router.abort_req_queue import AbortReqQueue
+from slora.server.router.cluster_req_queue import ClusterReqQueue
+from slora.server.router.vtc_req_queue import VTCReqQueue
 from slora.server.router.pets_req_queue import PETSReqQueue
 from slora.server.router.peft_req_queue import PEFTReqQueue
-from slora.server.router.cluster_req_queue import ClusterReqQueue
-from slora.server.router.abort_req_queue import AbortReqQueue
+
+
+def get_scheduler(input_params, adapter_dirs):
+    if input_params.scheduler == "vtc_fair":
+        return VTCReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                           input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
+    elif input_params.scheduler == "pets":
+        return PETSReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                            input_params.running_max_req_size)
+    elif input_params.scheduler == "peft":
+        return PEFTReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                            input_params.running_max_req_size)
+    elif input_params.batch_num_adapters is not None:
+        return ClusterReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                               input_params.running_max_req_size, input_params.batch_num_adapters)
+    elif input_params.enable_abort:
+        return AbortReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                             input_params.running_max_req_size)
+    elif input_params.scheduler == "slora":
+        return ReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
+                        input_params.running_max_req_size)
+    else:
+        raise Exception("unrecognized scheduler")
 
 
 class RouterManager:
@@ -51,22 +75,8 @@ class RouterManager:
             config, _ = get_lora_config(lora_dir, input_params.dummy)
             self.lora_ranks[lora_dir] = config["r"]
         self.lora_ranks[None] = 0
-        
-        if input_params.scheduler == "pets":
-            self.req_queue = PETSReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                      input_params.running_max_req_size)
-        elif input_params.scheduler == "peft":
-            self.req_queue = PEFTReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                      input_params.running_max_req_size)
-        elif input_params.batch_num_adapters is not None:
-            self.req_queue = ClusterReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                    input_params.running_max_req_size, input_params.batch_num_adapters)
-        elif input_params.enable_abort:
-            self.req_queue = AbortReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                      input_params.running_max_req_size)
-        else:
-            self.req_queue = ReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                    input_params.running_max_req_size)
+
+        self.req_queue = get_scheduler(input_params, adapter_dirs)
 
         self.running_batch: Batch = None
         self.eos_id = eos_id
@@ -178,11 +188,12 @@ class RouterManager:
                 self.stats_tool.count_prompt_tokens(new_batch)
                 self.running_batch = new_batch
 
-                # load adapters
-                ret = []
-                for tp_rank in range(self.world_size):
-                    ret.append(self.model_rpcs[tp_rank].load_adapters(new_batch.adapter_dirs))
-                await asyncio.gather(*ret)
+                if not self.input_params.no_lora:
+                    # load adapters
+                    ret = []
+                    for tp_rank in range(self.world_size):
+                        ret.append(self.model_rpcs[tp_rank].load_adapters(new_batch.adapter_dirs))
+                    await asyncio.gather(*ret)
 
                 
                 # merge adapter to base model
@@ -202,7 +213,8 @@ class RouterManager:
         if self.has_wait_tokens < self.max_wait_tokens:
             self.stats_tool.count_output_tokens(self.running_batch)
             # prefetch
-            if (self.input_params.prefetch and (self.has_wait_tokens == self.max_wait_tokens // 2 or
+            if (not self.input_params.no_lora and
+                self.input_params.prefetch and (self.has_wait_tokens == self.max_wait_tokens // 2 or
                 self.has_wait_tokens == self.max_wait_tokens - 3) and self.input_params.scheduler != "peft"):
                 next_batch = self.req_queue.next_batch()
                 if next_batch is not None:
@@ -224,10 +236,11 @@ class RouterManager:
             if new_mini_batch is not None:
                 self.stats_tool.count_prompt_tokens(new_mini_batch)
 
-                ret = []
-                for tp_rank in range(self.world_size):
-                    ret.append(self.model_rpcs[tp_rank].load_adapters(new_mini_batch.adapter_dirs))
-                await asyncio.gather(*ret)
+                if not self.input_params.no_lora:
+                    ret = []
+                    for tp_rank in range(self.world_size):
+                        ret.append(self.model_rpcs[tp_rank].load_adapters(new_mini_batch.adapter_dirs))
+                    await asyncio.gather(*ret)
 
                 await self._prefill_batch(new_mini_batch, minibatch=True)
                 if not new_mini_batch.is_clear():
@@ -261,6 +274,7 @@ class RouterManager:
         return
 
     async def _decode_batch(self, batch:Batch):
+        self.req_queue.update_counter(batch)
         rets = [self.model_rpcs[tp_rank].decode_batch(batch.batch_id) for tp_rank in range(self.world_size)]
         ans = await asyncio.gather(*rets)
         if self.world_size != 1:
@@ -300,7 +314,7 @@ class RouterManager:
                     ret.append(self.model_rpcs[tp_rank].unmerge_adapter())
                 await asyncio.gather(*ret)
 
-            if not minibatch:
+            if not minibatch and not self.input_params.no_lora:
                 ret = []
                 for tp_rank in range(self.world_size):
                     ret.append(self.model_rpcs[tp_rank].offload_adapters(batch.adapter_dirs))
@@ -314,11 +328,12 @@ class RouterManager:
 
     async def _filter_runing_batch(self):
         if self.running_batch is not None and self.running_batch.is_clear():
-            # offload model and adapters
-            ret = []
-            for tp_rank in range(self.world_size):
-                ret.append(self.model_rpcs[tp_rank].offload_adapters())
-            await asyncio.gather(*ret)
+            if not self.input_params.no_lora:
+                # offload model and adapters
+                ret = []
+                for tp_rank in range(self.world_size):
+                    ret.append(self.model_rpcs[tp_rank].offload_adapters())
+                await asyncio.gather(*ret)
 
             self.running_batch = None
             return
@@ -383,6 +398,8 @@ def start_router_process(args, router_port, detokenization_port, model_rpc_ports
                                no_kernel=args.no_kernel,
                                no_mem_pool=args.no_mem_pool,
                                bmm=args.bmm,
+                               no_lora=args.no_lora,
+                               fair_weights=args.fair_weights,
                               )
 
     try:

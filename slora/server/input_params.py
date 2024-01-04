@@ -46,6 +46,9 @@ class InputParams:
         no_kernel,
         no_mem_pool,
         bmm,
+        no_lora,
+        # fairness
+        fair_weights,
     ) -> None:
         self.max_req_total_len = max_req_total_len
         self.max_total_token_num = max_total_token_num
@@ -71,5 +74,8 @@ class InputParams:
         self.no_kernel = no_kernel
         self.no_mem_pool = no_mem_pool
         self.bmm = bmm
+        self.no_lora = no_lora
+        
+        self.fair_weights = fair_weights
         return
  

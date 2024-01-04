@@ -55,6 +55,9 @@ class ReqQueue:
             return True
         else:
             return False
+    
+    def update_counter(self, req):
+        pass 
 
     def generate_new_batch(self, current_batch:Batch, lora_ranks: dict[str, int]):
         if current_batch is not None and len(current_batch.reqs) >= self.running_max_req_size:

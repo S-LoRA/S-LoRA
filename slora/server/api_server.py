@@ -92,7 +92,10 @@ async def generate(request: Request) -> Response:
     sampling_params = SamplingParams(**sample_params_dict)
     sampling_params.verify()
 
-    request_id = uuid.uuid4().hex
+    if "req_id" in request_dict:
+        request_id = request_dict["req_id"]
+    else:
+        request_id = uuid.uuid4().hex
     results_generator = httpserver_manager.generate(adapter_dir, prompt, sampling_params, request_id)
 
     # Non-streaming case
@@ -138,7 +141,10 @@ async def generate_stream(request: Request) -> Response:
     sampling_params = SamplingParams(**sample_params_dict)
     sampling_params.verify()
 
-    request_id = uuid.uuid4().hex
+    if "req_id" in request_dict:
+        request_id = request_dict["req_id"]
+    else:
+        request_id = uuid.uuid4().hex
     results_generator = httpserver_manager.generate(adapter_dir, prompt, sampling_params, request_id)
 
     # Streaming case
@@ -352,6 +358,7 @@ def main():
     ''' slora arguments '''
     parser.add_argument("--lora-dirs", type=str, default=[], action="append",
                         help="the adapter weight dirs associate with base model dir")
+    parser.add_argument("--fair-weights", type=int, default=[], action="append")
     parser.add_argument("--dummy", action="store_true")
     parser.add_argument("--swap", action="store_true")
     parser.add_argument("--pool-size-lora", type=int, default=0)
@@ -363,12 +370,13 @@ def main():
     parser.add_argument("--enable-abort", action="store_true")
 
     # debug parameters
-    # do not use, does not rule out the swap over MemAllocator
+    # do not use no-lora-swap, does not rule out the swap over MemAllocator
     parser.add_argument("--no-lora-swap", action="store_true")
     parser.add_argument("--no-lora-compute", action="store_true")
     parser.add_argument("--no-kernel", action="store_true")
     parser.add_argument("--no-mem-pool", action="store_true")
     parser.add_argument("--bmm", action="store_true")
+    parser.add_argument("--no-lora", action="store_true")
     ''' end of slora arguments '''
 
     args = parser.parse_args()
