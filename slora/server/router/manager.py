@@ -23,32 +23,15 @@ from slora.models.peft.lora_adapter import get_lora_config
 from slora.server.router.profiler import AlphaModel, BetaModel
 from slora.server.router.abort_req_queue import AbortReqQueue
 from slora.server.router.cluster_req_queue import ClusterReqQueue
-from slora.server.router.vtc_max_req_queue import VTCMaxReqQueue
 from slora.server.router.vtc_req_queue import VTCReqQueue
-from slora.server.router.lcf_req_queue import LCFReqQueue
-from slora.server.router.mdrr_req_queue import MDRRReqQueue
 from slora.server.router.pets_req_queue import PETSReqQueue
 from slora.server.router.peft_req_queue import PEFTReqQueue
-from slora.server.router.lshare_req_queue import LShareReqQueue
 
 
 def get_scheduler(input_params, adapter_dirs):
-    if input_params.scheduler == "vtc_max_fair":
-        return VTCMaxReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                              input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
-    elif input_params.scheduler == "lcf_fair":
-        return LCFReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                                 input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
-    elif input_params.scheduler == "vtc_fair":
+    if input_params.scheduler == "vtc_fair":
         return VTCReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
                            input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
-    elif input_params.scheduler == "mdrr_fair":
-        return MDRRReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                              input_params.running_max_req_size, adapter_dirs, input_params.fair_weights)
-    elif input_params.scheduler == "lshare_fair":
-        assert input_params.enable_abort, "lshare_fair must be used with --enable-abort flag"
-        return LShareReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
-                             input_params.running_max_req_size)
     elif input_params.scheduler == "pets":
         return PETSReqQueue(input_params.max_total_token_num, input_params.batch_max_tokens,
                             input_params.running_max_req_size)
