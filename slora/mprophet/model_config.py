@@ -169,3 +169,28 @@ def get_config_json(name):
         raise NotImplementedError
 
     return  config
+
+"""
+Get the quantize config parameter in json forat
+We use the --mode parameter to support 
+"""
+def get_quantize_config_json(name, mode):
+    # Now we only support `gptq` quantization for `llama-2` model
+    if "llama-2" in name.lower():
+        if "gptq" in mode:
+            quantize_config = {
+                "bits": 4,
+                "group_size": 128,
+                "damp_percent": 0.01,
+                "desc_act": False,
+                "sym": True,
+                "true_sequential": True,
+                "model_name_or_path": None,
+                "model_file_base_name": "model"
+            }
+        else:
+            raise NotImplementedError
+    else:
+        raise NotImplementedError
+
+    return quantize_config

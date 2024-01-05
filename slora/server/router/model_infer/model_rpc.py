@@ -17,8 +17,10 @@ from slora.server.router.model_infer.infer_batch import InferBatch
 from slora.common.configs.config import setting
 from slora.models.llama.model import LlamaTpPartModel
 from slora.models.llama2.model import Llama2TpPartModel
+from slora.models.llama2_quant.model import QuantLlama2TpPartModel
 from slora.models.peft.lora_adapter import LoraTpPartAdapter
 from slora.models.peft.lora_unordered_batch_infer import LoraUnorderedBatchInfer
+from slora.models.peft.lora_unordered_batch_infer_gptq import LoraUnorderedBatchInferGPTQ
 from slora.models.peft.lora_single_batch_infer import LoraPEFTBatchInfer
 from slora.models.bmm.lora_bmm_infer import LoraBmmInfer
 from slora.server.router.model_infer.infer_adapter import InferAdapter
@@ -27,7 +29,6 @@ from slora.utils.infer_utils import set_random_seed
 from slora.utils.infer_utils import calculate_time, mark_start, mark_end
 from slora.utils.model_utils import get_model_config
 from .post_process import sample
-
 
 class ModelRpcServer(rpyc.Service):
 
@@ -59,11 +60,18 @@ class ModelRpcServer(rpyc.Service):
             self.model_type = model_cfg["model_type"]
             if self.model_type == "llama":
                 if "num_key_value_heads" in model_cfg.keys():
-                    self.model = Llama2TpPartModel(rank_id, world_size, weight_dir,
-                                                    max_total_token_num,
-                                                    mem_adapter_size=input_params.pool_size_lora,
-                                                    load_way=load_way, mode=mode,
-                                                    dummy=input_params.dummy)
+                    if "gptq" in mode:
+                        self.model = QuantLlama2TpPartModel(rank_id, world_size, weight_dir,
+                                                            max_total_token_num,
+                                                            mem_adapter_size=input_params.pool_size_lora,
+                                                            load_way=load_way, mode=mode,
+                                                            dummy=input_params.dummy)
+                    else:
+                        self.model = Llama2TpPartModel(rank_id, world_size, weight_dir,
+                                                        max_total_token_num,
+                                                        mem_adapter_size=input_params.pool_size_lora,
+                                                        load_way=load_way, mode=mode,
+                                                        dummy=input_params.dummy)
                     
                 else:
                     self.model = LlamaTpPartModel(rank_id, world_size, weight_dir,
@@ -215,7 +223,10 @@ class ModelRpcServer(rpyc.Service):
         else:
             adapters = [self.adapters[self.adapter_id[adapter_dir]] for adapter_dir in batch.adapter_dirs]
             if self.input_params.no_lora_compute:
-                engine = LoraUnorderedBatchInfer(self.model, adapters)
+                if "gptq" in self.mode:
+                    engine = LoraUnorderedBatchInferGPTQ(self.model, adapters)
+                else:
+                    engine = LoraUnorderedBatchInfer(self.model, adapters)
             elif self.input_params.bmm:
                 torch.cuda.empty_cache()
                 compressed_dirs = [batch.adapter_dirs[0]]
@@ -231,7 +242,10 @@ class ModelRpcServer(rpyc.Service):
                 adapters = [self.adapters[self.adapter_id[adapter_dir]] for adapter_dir in compressed_dirs]
                 engine = LoraBmmInfer(self.model, adapters, adapter_sep)
             else:
-                engine = LoraUnorderedBatchInfer(self.model, adapters, infer_adapter=self.infer_adapter)
+                if "gptq" in self.mode:
+                    engine = LoraUnorderedBatchInferGPTQ(self.model, adapters, infer_adapter=self.infer_adapter)
+                else:
+                    engine = LoraUnorderedBatchInfer(self.model, adapters, infer_adapter=self.infer_adapter)
             kwargs["no_lora_compute"] = self.input_params.no_lora_compute
             # kwargs["no_lora_copy"] = self.input_params.no_lora_copy 
 

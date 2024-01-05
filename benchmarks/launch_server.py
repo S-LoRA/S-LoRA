@@ -24,6 +24,8 @@ if __name__ == "__main__":
     parser.add_argument("--batch-num-adapters", type=int, default=None)
     parser.add_argument("--enable-abort", action="store_true")
     parser.add_argument("--vllm-mem-ratio", type=float, default=0.95)
+
+    parser.add_argument("--gptq", action="store_true")
     args = parser.parse_args()
 
     base_model = BASE_MODEL[args.model_setting]
@@ -71,6 +73,10 @@ if __name__ == "__main__":
         # cmd += " --no-kernel"
         if args.bmm:
             cmd += " --bmm"
+        
+        if args.gptq:
+            cmd += f" --mode gptq"
+        cmd += " --port 19283 --nccl_port 18277"
 
     elif args.backend == "lightllm":
         cmd = f"python -m lightllm.server.api_server" \
