@@ -163,7 +163,8 @@ __global__ void bgmv_multi_lora_rank_expand_kernel(T* __restrict__ Y, const T* _
   size_t batch_idx = blockIdx.y;
   size_t lora_idx = indicies[batch_idx];
   size_t lora_rank = lora_ranks[lora_idx] / 4;
-  constexpr size_t vec_size = 16 / sizeof(T);
+  // constexpr size_t vec_size = 16 / sizeof(T);
+  constexpr size_t vec_size = 2;
   constexpr size_t tx = feat_in / vec_size;
   static_assert(feat_in % vec_size == 0);
   constexpr size_t ty = 32 / tx;
@@ -219,6 +220,7 @@ void bgmv_kernel(T* __restrict__ Y, const T* __restrict__ X,
                  const T* __restrict__ lora_scales) {
   size_t vec_size = 16 / sizeof(T);
   if constexpr (feat_in < feat_out) {
+    vec_size = 2;
     size_t tx = feat_in / vec_size;
     size_t ty = 32 / tx;
     size_t tz = 4;

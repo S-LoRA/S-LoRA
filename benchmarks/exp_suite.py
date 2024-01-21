@@ -7,6 +7,7 @@ BASE_MODEL = {
         "S3": "huggyllama/llama-13b",
         "S4": "huggyllama/llama-13b",
         "Real": "huggyllama/llama-7b",
+        "S-13b-r2": "huggyllama/llama-13b",
 }
 
 LORA_DIR = {
@@ -17,6 +18,7 @@ LORA_DIR = {
         "S4": ["dummy-lora-13b-rank-64",
                "dummy-lora-13b-rank-32", "dummy-lora-13b-rank-16",],
         "Real": ["tloen/alpaca-lora-7b", "MBZUAI/bactrian-x-llama-7b-lora"],
+        "S-13b-r2": ["dummy-lora-13b-rank-2"],
 }
 
 BenchmarkConfig = namedtuple(
@@ -111,6 +113,15 @@ paper_suite = {
         req_rate = [2],
         cv = [1],
         duration = [60 * 5],
+        input_range = [[8, 512]],
+        output_range = [[8, 512]],
+    ),
+    "a100-40-num-adapter-rank-2": BenchmarkConfig(
+        num_adapters = [0, 100, 200, 400],
+        alpha = [1],
+        req_rate = [2],
+        cv = [1],
+        duration = [60 * 2],
         input_range = [[8, 512]],
         output_range = [[8, 512]],
     ),

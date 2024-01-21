@@ -34,10 +34,11 @@ void bgmv_kernel(T* __restrict__ Y, const T* __restrict__ X,
     f(T, narrow, 49152) \
 
 #define FOR_BGMV_WIDE_NARROW(f, T) \
+    FOR_BGMV_WIDE(f, T, 2) \
     FOR_BGMV_WIDE(f, T, 8) \
     FOR_BGMV_WIDE(f, T, 16) \
     FOR_BGMV_WIDE(f, T, 32) \
-    FOR_BGMV_WIDE(f, T, 64) \
-    FOR_BGMV_WIDE(f, T, 128)
+    FOR_BGMV_WIDE(f, T, 64)
+    // FOR_BGMV_WIDE(f, T, 128)
 
 // clang-format on
